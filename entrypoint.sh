@@ -59,9 +59,10 @@ cp /skill/scripts/verify-fast.sh scripts/verify-fast.sh
 cp /skill/scripts/verify-full.sh scripts/verify-full.sh
 chmod +x scripts/verify-*.sh
 
-# Initial commit with upgrade scaffolding
-git add plan.md checklist.yaml run-log.md CLAUDE.md scripts/verify-*.sh
-git commit -m "upgrade: scaffold upgrade to Laravel ${TARGET_LARAVEL}"
+# Ensure .env and database.sqlite are gitignored
+grep -qxF '.env' .gitignore 2>/dev/null || echo '.env' >> .gitignore
+grep -qxF 'database/database.sqlite' .gitignore 2>/dev/null || echo 'database/database.sqlite' >> .gitignore
 
+# No scaffold commit — agent commits once per phase
 echo "Starting Claude Code via Ralph loop..."
 exec /skill/scripts/ralph-loop.sh
