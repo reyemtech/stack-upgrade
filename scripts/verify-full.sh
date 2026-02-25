@@ -16,7 +16,7 @@ touch database/database.sqlite 2>/dev/null || true
 php artisan migrate:fresh --seed --force 2>&1
 
 echo "[4/6] php artisan test..."
-php artisan test --parallel 2>&1
+php artisan test 2>&1
 
 echo "[5/6] npm run build..."
 npm run build 2>&1

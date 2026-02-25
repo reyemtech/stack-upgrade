@@ -12,6 +12,6 @@ php artisan route:list 2>&1 | tail -5
 echo "(route:list OK)"
 
 echo "[3/3] php artisan test (fast)..."
-php artisan test --parallel --stop-on-failure 2>&1
+php artisan test --stop-on-failure 2>&1
 
 echo "=== verify-fast PASSED ==="
