@@ -13,9 +13,25 @@ Disposable Docker image that runs Claude Code autonomously to upgrade any Larave
 
 ## Usage
 
+### With Claude Max (recommended)
+
+Generate a token with `claude setup-token`, then:
+
 ```bash
 docker build -t laravel-upgrade-agent .
 
+docker run --rm \
+  -e REPO_URL=git@github.com:org/repo.git \
+  -e TARGET_LARAVEL=13 \
+  -e CLAUDE_CODE_OAUTH_TOKEN=$CLAUDE_CODE_OAUTH_TOKEN \
+  -e GIT_SSH_KEY_B64=$(base64 < ~/.ssh/deploy_key) \
+  -v ./output:/output \
+  laravel-upgrade-agent
+```
+
+### With Anthropic API Key
+
+```bash
 docker run --rm \
   -e REPO_URL=git@github.com:org/repo.git \
   -e TARGET_LARAVEL=13 \
@@ -31,7 +47,8 @@ docker run --rm \
 |----------|----------|---------|-------------|
 | `REPO_URL` | Yes | — | Git clone URL (SSH) |
 | `TARGET_LARAVEL` | Yes | — | Target major version (e.g., `13`) |
-| `ANTHROPIC_API_KEY` | Yes | — | Anthropic API key |
+| `CLAUDE_CODE_OAUTH_TOKEN` | One of | — | Claude Max token (from `claude setup-token`) |
+| `ANTHROPIC_API_KEY` | One of | — | Anthropic API key (from console.anthropic.com) |
 | `GIT_SSH_KEY_B64` | Yes | — | Base64-encoded deploy key |
 | `GIT_PUSH` | No | `true` | Push branch on completion |
 | `UPGRADE_FILAMENT` | No | `true` | Include Filament upgrade phase |
@@ -59,7 +76,7 @@ After a run, the `/output` volume contains:
 ## Security
 
 - Use a **repo-scoped deploy key**, not your personal SSH key
-- `ANTHROPIC_API_KEY` is passed as env var, never baked into the image
+- API keys/tokens are passed as env vars, never baked into the image
 - Container is ephemeral — destroyed after run
 - Review the upgrade branch before merging
 

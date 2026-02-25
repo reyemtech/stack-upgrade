@@ -4,8 +4,13 @@ set -e
 # Validate required env vars
 : "${REPO_URL:?REPO_URL is required}"
 : "${TARGET_LARAVEL:?TARGET_LARAVEL is required}"
-: "${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY is required}"
 : "${GIT_SSH_KEY_B64:?GIT_SSH_KEY_B64 is required}"
+
+# Auth: support both Anthropic API key and Claude Max OAuth token
+if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+  echo "ERROR: Set either ANTHROPIC_API_KEY (API key) or CLAUDE_CODE_OAUTH_TOKEN (Claude Max via 'claude setup-token')"
+  exit 1
+fi
 
 # Setup SSH
 mkdir -p ~/.ssh
