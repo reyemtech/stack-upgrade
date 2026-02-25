@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev \
     libzip-dev libxml2-dev libcurl4-openssl-dev \
     libpq-dev libonig-dev libicu-dev libsodium-dev \
-    gettext-base \
+    gettext-base jq \
     && rm -rf /var/lib/apt/lists/*
 
 # PHP extensions (matching reyemtech/sail)
