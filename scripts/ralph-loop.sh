@@ -41,7 +41,7 @@ git log --oneline > /output/commits.log 2>/dev/null || true
 
 if [ "${GIT_PUSH:-true}" = "true" ]; then
   echo "Pushing branch upgrade/laravel-${TARGET_LARAVEL}..."
-  git push origin "upgrade/laravel-${TARGET_LARAVEL}" || echo "Push failed — check deploy key permissions."
+  git push origin "upgrade/laravel-${TARGET_LARAVEL}" || echo "Push failed — branch may have diverged or deploy key lacks write access."
 fi
 
 echo "Done. Artifacts in /output/"

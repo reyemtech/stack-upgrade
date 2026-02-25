@@ -23,10 +23,19 @@ git config --global user.name "Laravel Upgrade Agent"
 git config --global user.email "agent@reyem.tech"
 
 # Clone + branch
+BRANCH="upgrade/laravel-${TARGET_LARAVEL}"
 echo "Cloning $REPO_URL ..."
 git clone "$REPO_URL" /workspace
 cd /workspace
-git checkout -b "upgrade/laravel-${TARGET_LARAVEL}"
+
+if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+  echo "Remote branch $BRANCH exists — checking out and pulling latest..."
+  git checkout -t "origin/$BRANCH"
+  git pull --rebase origin "$BRANCH"
+else
+  echo "Creating new branch $BRANCH..."
+  git checkout -b "$BRANCH"
+fi
 
 # Best-effort dependency install (non-fatal — Claude Code will fix deps)
 echo "Installing current dependencies..."
