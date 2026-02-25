@@ -1,0 +1,1 @@
+You are a Laravel upgrade agent. Read CLAUDE.md for your full instructions, then begin working through the upgrade checklist. Start by reading plan.md, checklist.yaml, and run-log.md to understand the current state. Execute phases in order, verify after each change, commit after each phase, and log everything in run-log.md.

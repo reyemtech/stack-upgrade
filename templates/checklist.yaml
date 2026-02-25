@@ -1,0 +1,58 @@
+# Laravel ${TARGET_LARAVEL} Upgrade Checklist
+# Generated: ${UPGRADE_DATE}
+
+phases:
+  - id: 1
+    name: Core Framework
+    status: not_started
+    description: Upgrade laravel/framework to ^${TARGET_LARAVEL}.0 and fix breaking changes
+    acceptance:
+      - composer validate passes
+      - php artisan route:list succeeds
+      - all tests pass
+      - no laravel/framework deprecation warnings
+
+  - id: 2
+    name: First-Party Packages
+    status: not_started
+    description: Upgrade Horizon, Telescope, Sanctum, and other first-party packages
+    acceptance:
+      - all first-party packages at compatible versions
+      - composer validate passes
+      - all tests pass
+
+  - id: 3
+    name: Filament + Livewire
+    status: not_started
+    description: Upgrade Filament and Livewire to latest compatible versions
+    acceptance:
+      - filament panels load without error (if installed)
+      - livewire components render (if installed)
+      - all tests pass
+
+  - id: 4
+    name: Third-Party Composer
+    status: not_started
+    description: Bump remaining third-party Composer packages
+    acceptance:
+      - no packages pinned to incompatible versions
+      - composer validate passes
+      - all tests pass
+
+  - id: 5
+    name: NPM + Frontend
+    status: not_started
+    description: Update npm dependencies and verify build
+    acceptance:
+      - npm run build succeeds
+      - no console errors in built assets
+      - all tests pass
+
+  - id: 6
+    name: Config Drift
+    status: not_started
+    description: Reconcile config files against latest Laravel stubs
+    acceptance:
+      - new config keys added
+      - deprecated keys removed
+      - verify-full.sh passes

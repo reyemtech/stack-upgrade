@@ -1,0 +1,5 @@
+output/
+.git
+.env
+*.log
+README.md
