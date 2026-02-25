@@ -25,7 +25,7 @@ git checkout -b "upgrade/laravel-${TARGET_LARAVEL}"
 
 # Install current deps + baseline
 echo "Installing current dependencies..."
-composer install --no-interaction --no-progress --quiet
+composer install --no-interaction --no-progress --quiet || composer update --no-interaction --no-progress --quiet
 npm ci --silent 2>/dev/null || true
 
 echo "Running baseline verification..."
