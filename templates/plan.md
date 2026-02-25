@@ -27,12 +27,14 @@ Upgrade Laravel first-party packages to compatible versions.
 - Verify: `scripts/verify-fast.sh`
 
 ### Phase 3: Filament + Livewire
-Upgrade Filament and Livewire to latest compatible versions.
+Upgrade Filament and Livewire to their **latest major versions** (e.g., Filament v4/v5, not just patch updates).
 
 **Key steps:**
-- Check if Filament is installed; skip if `UPGRADE_FILAMENT=false`
-- Follow Filament upgrade guide (namespace migrations, Schema API changes)
-- Update Livewire if needed
+- Check if Filament is installed; skip if not in `composer.json`
+- Upgrade to the latest major version — follow the official upgrade guide
+- Apply all required code changes (namespace migrations, Schema API changes, config updates)
+- Update Livewire to latest major version if needed
+- Check for `livewire/flux` and `livewire/flux-pro` — upgrade if present, skip if not installed
 - Verify: `scripts/verify-fast.sh`
 
 ### Phase 4: Third-Party Composer
@@ -45,11 +47,14 @@ Bump remaining Composer packages to compatible versions.
 - Verify: `scripts/verify-fast.sh` after each batch
 
 ### Phase 5: NPM + Frontend
-Update npm dependencies and verify the frontend build.
+Update ALL npm dependencies to latest major versions and verify the frontend build.
 
 **Key steps:**
 - Run `npm outdated` to identify packages needing updates
+- Upgrade Tailwind CSS to latest major version (e.g., v4) — follow migration guide
+- Update Vite, PostCSS, Autoprefixer, and all build tooling
 - Update `package.json` dependencies
+- Remove unused packages (not imported anywhere in resources/ or app/)
 - Remove deprecated packages
 - Verify: `npm run build` + `scripts/verify-fast.sh`
 
@@ -64,7 +69,8 @@ Reconcile config files against latest Laravel stubs.
 
 ## Constraints
 
-- Never modify business logic — only framework/package upgrade code
-- Keep diffs small and reversible
+- Upgrade everything to latest major versions — the goal is zero tech debt
+- Never change application behaviour — refactoring for new APIs is fine, changing what code does is not
+- Skip unused packages — if not imported/used anywhere, remove instead of upgrading
 - Commit after each phase
 - If stuck after 3 attempts on same error, log and move on

@@ -35,10 +35,11 @@ Every time you start (including restarts):
   - Evidence (test output, error messages)
 
 ### Constraints
-- **Never modify business logic** — only framework/package upgrade code
+- **Upgrade everything to latest** — the goal is eliminating tech debt and security risks. If a major version upgrade requires code changes (namespace migrations, API changes, config updates), DO those changes. This is expected.
+- **Never change application behaviour** — inputs, outputs, and user-facing features must remain identical. Refactoring code to match a new package API is fine; changing what the code *does* is not.
 - **Never delete tests** — fix them to work with the new version
 - **Never force-install** incompatible packages — log the conflict and move on
-- **Keep diffs reversible** — prefer small, focused changes
+- **Skip unused packages** — if a package is in `composer.json` or `package.json` but is never imported/used anywhere in the codebase (no `use` statements, no `require`/`import`), remove it instead of upgrading. Log the removal in `run-log.md`.
 - If a package has no compatible version, log it in `run-log.md` and skip
 
 ## Verification Scripts
