@@ -30,9 +30,9 @@ git checkout -b "upgrade/laravel-${TARGET_LARAVEL}"
 
 # Best-effort dependency install (non-fatal — Claude Code will fix deps)
 echo "Installing current dependencies..."
-if ! composer install --no-interaction --no-progress 2>&1; then
+if ! composer install --no-interaction --no-progress --prefer-dist 2>&1; then
   echo "composer install failed, trying composer update..."
-  if ! composer update --no-interaction --no-progress 2>&1; then
+  if ! composer update --no-interaction --no-progress --prefer-dist 2>&1; then
     echo "WARNING: Dependency install failed. Claude Code will handle this."
   fi
 fi
