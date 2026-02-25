@@ -12,6 +12,7 @@ php artisan route:list 2>&1 | tail -5
 echo "(route:list OK)"
 
 echo "[3/6] php artisan migrate:fresh --seed..."
+touch database/database.sqlite 2>/dev/null || true
 php artisan migrate:fresh --seed --force 2>&1
 
 echo "[4/6] php artisan test..."
