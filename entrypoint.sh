@@ -8,10 +8,10 @@ set -e
 : "${GIT_SSH_KEY_B64:?GIT_SSH_KEY_B64 is required}"
 
 # Setup SSH
-mkdir -p /root/.ssh
-echo "$GIT_SSH_KEY_B64" | base64 -d > /root/.ssh/id_ed25519
-chmod 600 /root/.ssh/id_ed25519
-ssh-keyscan github.com >> /root/.ssh/known_hosts 2>/dev/null
+mkdir -p ~/.ssh
+echo "$GIT_SSH_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
+chmod 600 ~/.ssh/id_ed25519
+ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
 
 # Configure git
 git config --global user.name "Laravel Upgrade Agent"
