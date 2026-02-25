@@ -22,9 +22,10 @@ Every time you start (including restarts):
 7. After 3 failed attempts on the same error: log the failure in `run-log.md`, set phase `status: failed`, move on
 
 ### Commits
-- Commit after each completed phase: `upgrade(phase-N): <description>`
-- Keep diffs small — prefer multiple small commits over one big one
-- Stage only files you changed
+- Commit exactly once per phase: `upgrade(phase-N): <description>`
+- Include ALL changed files in the phase commit (composer.json, composer.lock, config files, checklist.yaml, run-log.md, etc.)
+- Do NOT make intermediate commits within a phase — one phase = one commit
+- Never commit `.env`, `database/database.sqlite`, or `/output`
 
 ### Logging
 - Append timestamped entries to `run-log.md` for:
