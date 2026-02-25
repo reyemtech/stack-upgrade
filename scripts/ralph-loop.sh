@@ -1,6 +1,7 @@
 #!/bin/bash
 # Ralph loop: restart Claude Code if it exits before checklist is done
 MAX_RESTARTS=${MAX_RESTARTS:-5}
+MAX_TURNS=${MAX_TURNS:-200}
 RESTARTS=0
 
 cd /workspace
@@ -10,7 +11,10 @@ while [ $RESTARTS -lt $MAX_RESTARTS ]; do
 
   claude --dangerously-skip-permissions \
     --verbose \
+    --max-turns "$MAX_TURNS" \
+    --output-format stream-json \
     -p "$(cat /skill/kickoff-prompt.txt)" \
+    2>&1 | tee /output/claude-run-$((RESTARTS + 1)).log \
     || true
 
   # Check if checklist has incomplete tasks
