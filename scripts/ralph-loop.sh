@@ -12,7 +12,6 @@ while [ $RESTARTS -lt $MAX_RESTARTS ]; do
   claude --dangerously-skip-permissions \
     --verbose \
     --max-turns "$MAX_TURNS" \
-    --output-format stream-json \
     -p "$(cat /skill/kickoff-prompt.txt)" \
     2>&1 | tee /output/claude-run-$((RESTARTS + 1)).log \
     || true
