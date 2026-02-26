@@ -58,14 +58,34 @@ Update ALL npm dependencies to latest major versions and verify the frontend bui
 - Remove deprecated packages
 - Verify: `npm run build` + `.upgrade/scripts/verify-fast.sh`
 
-### Phase 6: Config Drift
-Reconcile config files against latest Laravel stubs.
+### Phase 6: Config Drift + README
+Reconcile config files against latest Laravel stubs and update version references in the project README.
 
 **Key steps:**
 - Compare config files against `laravel/laravel` stubs for target version
 - Add new config keys, remove deprecated ones
 - Do NOT override app-specific customizations
+- Update the project `README.md` version references (see README rules below)
 - Verify: `.upgrade/scripts/verify-full.sh`
+
+**README update rules (conservative — only update facts that are now wrong):**
+- Update shields.io badge version numbers for Laravel, PHP, and Node (e.g., `img.shields.io/badge/Laravel-11-red` → `Laravel-${TARGET_LARAVEL}`)
+- Update requirements/prerequisites text that states specific PHP, Laravel, or Node versions
+- Update composer constraint references shown in code blocks (e.g., `"laravel/framework": "^11.0"` → `"^${TARGET_LARAVEL}.0"`)
+- Do NOT add sections, rewrite prose, or touch anything that isn't a verifiable version number
+- If the project has no README.md or no version references, skip this step
+
+### Phase 7: PHP Version
+Attempt to bump the PHP version constraint to the latest stable version compatible with all installed dependencies.
+
+**Key steps:**
+- Check the current PHP constraint in `composer.json` (e.g., `"php": "^8.2"`)
+- Check what PHP version is available in the container (`php -v`)
+- Bump the PHP constraint to the highest version compatible with all deps (e.g., `"php": "^8.4"`)
+- Run `composer update --no-install` to validate the constraint resolves
+- Run `composer install` and `.upgrade/scripts/verify-full.sh`
+- If tests fail or constraint doesn't resolve, **revert** to the previous PHP constraint and log the reason
+- This phase is optional — if the current constraint already covers the latest PHP, skip it
 
 ## Constraints
 

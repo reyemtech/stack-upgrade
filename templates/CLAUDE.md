@@ -51,6 +51,34 @@ Every time you start (including restarts):
 - **Skip unused packages** — if a package is in `composer.json` or `package.json` but is never imported/used anywhere in the codebase (no `use` statements, no `require`/`import`), remove it instead of upgrading. Log the removal in `.upgrade/run-log.md`. Check `.upgrade/recon-report.md` for pre-analyzed package usage.
 - If a package has no compatible version, log it in `.upgrade/run-log.md` and skip
 
+## README Version Updates (Phase 6)
+
+During Phase 6, update version references in the project's `README.md`. Be conservative — only update facts that are now wrong.
+
+**What to update:**
+- **Shields.io badges** — find badges referencing Laravel, PHP, or Node versions and update the version numbers (e.g., `img.shields.io/badge/Laravel-11-red` → `Laravel-12`)
+- **Requirements/prerequisites text** — find lines like "Requires PHP >= 8.2" or "- Laravel 11.x" and update the version. Only update if the line clearly states a version for PHP, Laravel, or Node. Preserve formatting.
+- **Composer constraint references** — if README shows `"laravel/framework": "^11.0"` in code blocks, update to match the actual `composer.json` constraint
+
+**What NOT to do:**
+- Do not add new sections, upgrade history, or breaking change notes
+- Do not rewrite or restructure existing text
+- Do not touch anything you can't verify with actual version data
+- If the project has no `README.md` or no version references, skip entirely
+
+## PHP Version Upgrade (Phase 7)
+
+After all packages are upgraded and tests pass, attempt to bump the PHP version constraint:
+
+1. Check the current `"php"` constraint in `composer.json`
+2. Check the available PHP version in the container (`php -v`)
+3. Bump the constraint to the highest compatible version (e.g., `"^8.4"`)
+4. Run `composer update --no-install` to validate — if it fails, revert and log why
+5. Run `composer install` + full verification
+6. If tests fail, revert to the previous constraint and log the reason
+
+This phase is optional — if the current constraint already covers the container's PHP version, mark as complete and skip.
+
 ## Reference Material
 
 - `.upgrade/laravel-upgrade-guide.html` — the official Laravel upgrade guide for the target version (if available). **Read this during Phase 1** for breaking changes and required migration steps.

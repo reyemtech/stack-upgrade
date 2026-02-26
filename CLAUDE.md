@@ -4,7 +4,7 @@ Instructions for developing the laravel-upgrade-agent itself (not for the agent 
 
 ## What This Project Is
 
-A disposable Docker image that runs Claude Code autonomously to upgrade any Laravel app. It clones a repo, creates an `upgrade/laravel-{version}` branch, works through 6 phases, commits per phase, and pushes. Optionally creates a PR with a generated changelog.
+A disposable Docker image that runs Claude Code autonomously to upgrade any Laravel app. It clones a repo, creates an `upgrade/laravel-{version}` branch, works through 7 phases, commits per phase, and pushes. Optionally creates a PR with a generated changelog.
 
 ## Architecture
 
@@ -112,7 +112,7 @@ These files define what the agent does inside the container:
 - **Upgrade everything to latest major versions** — Filament v4/v5, Tailwind v4, etc. Code changes for new APIs are expected.
 - **Never change application behaviour** — refactoring for package API changes is fine, changing what the code does is not.
 - **Skip unused packages** — if not imported/used anywhere, remove instead of upgrading.
-- **6 phases:** Core Framework > First-Party > Filament+Livewire > Third-Party Composer > NPM+Frontend > Config Drift
+- **7 phases:** Core Framework > First-Party > Filament+Livewire > Third-Party Composer > NPM+Frontend > Config Drift+README > PHP Version
 
 ## Environment Variables
 

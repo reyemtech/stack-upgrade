@@ -49,10 +49,21 @@ phases:
       - all tests pass
 
   - id: 6
-    name: Config Drift
+    name: Config Drift + README
     status: not_started
-    description: Reconcile config files against latest Laravel stubs
+    description: Reconcile config files against latest Laravel stubs and update version references in project README
     acceptance:
       - new config keys added
       - deprecated keys removed
+      - README version references updated (if present)
+      - verify-full.sh passes
+
+  - id: 7
+    name: PHP Version
+    status: not_started
+    description: Bump PHP constraint to latest stable version compatible with all dependencies
+    acceptance:
+      - PHP constraint updated or skipped with reason logged
+      - composer validate passes
+      - all tests pass
       - verify-full.sh passes

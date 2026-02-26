@@ -1,5 +1,10 @@
 # Laravel Upgrade Agent
 
+[![Release](https://img.shields.io/github/v/release/reyemtech/laravel-upgrade-agent?sort=semver)](https://github.com/reyemtech/laravel-upgrade-agent/releases)
+[![Build](https://github.com/reyemtech/laravel-upgrade-agent/actions/workflows/release.yml/badge.svg)](https://github.com/reyemtech/laravel-upgrade-agent/actions/workflows/release.yml)
+[![License: BSL 1.1](https://img.shields.io/badge/License-BSL_1.1-yellow.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/ghcr.io-image-blue)](https://github.com/reyemtech/laravel-upgrade-agent/pkgs/container/laravel-upgrade-agent)
+
 Disposable Docker image that runs [Claude Code](https://docs.anthropic.com/en/docs/claude-code) autonomously to upgrade any Laravel application. Point it at a repo, tell it the target version, and it produces an upgrade branch with one commit per phase.
 
 **Multi-arch:** `linux/amd64` and `linux/arm64` — runs on any major cloud/k8s provider.
@@ -39,7 +44,7 @@ docker run --rm \
 3. Runs **recon** — analyzes package usage, component counts, test suite shape
 4. Fetches the official Laravel upgrade guide for the target version
 5. Launches Claude Code inside a restart loop ("Ralph loop")
-6. Claude works through **6 upgrade phases**, committing after each
+6. Claude works through **7 upgrade phases**, committing after each
 7. Captures before/after dependency snapshots for review
 8. Pushes the branch (optionally creates a PR with a generated changelog)
 9. Writes structured results to `/output`
@@ -54,6 +59,7 @@ docker run --rm \
 | 4. Third-Party Composer | Remaining Composer packages |
 | 5. NPM + Frontend | Tailwind v4, Vite, build tooling |
 | 6. Config Drift | Reconcile config files against latest Laravel stubs |
+| 7. PHP Version | Bump PHP constraint to latest compatible version |
 
 Unused packages are **removed** instead of upgraded. Each phase runs verification before committing.
 
@@ -111,7 +117,7 @@ watch -n5 cat output/status.json
 
 # Check result when done
 cat output/result.json
-# {"outcome":"success","exit_code":0,"total_phases":6,"completed":6,"failed":0,...}
+# {"outcome":"success","exit_code":0,"total_phases":7,"completed":7,"failed":0,...}
 
 # Compare dependency changes
 diff <(jq -r '.installed[].name' output/before-composer.json | sort) \
@@ -222,4 +228,4 @@ spec:
 
 ## License
 
-MIT
+[Business Source License 1.1](LICENSE) — You may use this software for any purpose except providing a commercial hosted service that runs it on behalf of third parties. Each release converts to Apache 2.0 four years after its release date.
