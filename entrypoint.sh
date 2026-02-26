@@ -22,8 +22,13 @@ ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
 git config --global user.name "Laravel Upgrade Agent"
 git config --global user.email "agent@reyem.tech"
 
-# Clone + branch
+# Branch name: support optional suffix for repeat runs
 BRANCH="upgrade/laravel-${TARGET_LARAVEL}"
+if [ -n "$BRANCH_SUFFIX" ]; then
+  BRANCH="upgrade/laravel-${TARGET_LARAVEL}-${BRANCH_SUFFIX}"
+fi
+export BRANCH
+
 echo "Cloning $REPO_URL ..."
 git clone "$REPO_URL" /workspace
 cd /workspace
@@ -53,20 +58,41 @@ if [ -f .env.example ] && [ ! -f .env ]; then
 fi
 php artisan key:generate --force 2>/dev/null || true
 
+# Before-snapshots (for diff-based review)
+echo "Capturing pre-upgrade dependency snapshots..."
+composer show --format=json > /output/before-composer.json 2>/dev/null || echo "{}" > /output/before-composer.json
+npm ls --json > /output/before-npm.json 2>/dev/null || echo "{}" > /output/before-npm.json
+php artisan --version > /output/before-versions.txt 2>/dev/null || echo "unknown" > /output/before-versions.txt
+
 # Best-effort baseline (non-fatal)
 echo "Running baseline verification..."
 /skill/scripts/verify-full.sh 2>&1 | tee /output/baseline.log || echo "WARNING: Baseline verification had failures (expected pre-upgrade)."
 
+# Create .upgrade/ directory for all upgrade artifacts
+mkdir -p .upgrade/scripts
+
 # Drop templates with variable substitution
 export UPGRADE_DATE=$(date -u +%Y-%m-%d)
-envsubst < /skill/templates/plan.md > plan.md
-envsubst < /skill/templates/checklist.yaml > checklist.yaml
-cp /skill/templates/run-log.md run-log.md
-cp /skill/templates/CLAUDE.md CLAUDE.md
-mkdir -p scripts
-cp /skill/scripts/verify-fast.sh scripts/verify-fast.sh
-cp /skill/scripts/verify-full.sh scripts/verify-full.sh
-chmod +x scripts/verify-*.sh
+envsubst < /skill/templates/plan.md > .upgrade/plan.md
+envsubst < /skill/templates/checklist.yaml > .upgrade/checklist.yaml
+cp /skill/templates/run-log.md .upgrade/run-log.md
+cp /skill/templates/changelog.md .upgrade/changelog.md
+cp /skill/templates/CLAUDE.md .upgrade/CLAUDE.md
+cp /skill/scripts/verify-fast.sh .upgrade/scripts/verify-fast.sh
+cp /skill/scripts/verify-full.sh .upgrade/scripts/verify-full.sh
+chmod +x .upgrade/scripts/verify-*.sh
+
+# Fetch the official Laravel upgrade guide
+echo "Fetching Laravel upgrade guide..."
+PREV_LARAVEL=$((TARGET_LARAVEL - 1))
+curl -fsSL "https://laravel.com/docs/${TARGET_LARAVEL}.x/upgrade" \
+  -o .upgrade/laravel-upgrade-guide.html 2>/dev/null \
+  && echo "Upgrade guide saved to .upgrade/laravel-upgrade-guide.html" \
+  || echo "WARNING: Could not fetch upgrade guide (non-fatal)."
+
+# Run recon to map the repo before the agent starts
+echo "Running recon..."
+/skill/scripts/recon.sh 2>&1 | tee /output/recon.log || echo "WARNING: Recon had issues (non-fatal)."
 
 # Ensure .env and database.sqlite are gitignored
 grep -qxF '.env' .gitignore 2>/dev/null || echo '.env' >> .gitignore

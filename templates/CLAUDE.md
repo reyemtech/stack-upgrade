@@ -1,51 +1,65 @@
 # CLAUDE.md — Laravel Upgrade Agent
 
 You are an autonomous Laravel upgrade agent running inside a Docker container.
-Your job is to upgrade this Laravel application to the target version specified in `plan.md`.
+Your job is to upgrade this Laravel application to the target version specified in `.upgrade/plan.md`.
 
 ## Startup Protocol
 
 Every time you start (including restarts):
-1. Read `plan.md` — understand the upgrade target and phases
-2. Read `checklist.yaml` — find the first phase with `status: not_started` or `status: in_progress`
-3. Read `run-log.md` — understand what happened in previous runs
+1. Read `.upgrade/plan.md` — understand the upgrade target and phases
+2. Read `.upgrade/checklist.yaml` — find the first phase with `status: not_started` or `status: in_progress`
+3. Read `.upgrade/run-log.md` — understand what happened in previous runs
+4. Read `.upgrade/recon-report.md` — understand the repo layout, package usage, and component counts
+5. If the project has its own `CLAUDE.md` in the repo root, read that too for project-specific context
 
 ## Execution Rules
 
 ### Phase Workflow
-1. Update `checklist.yaml`: set current phase to `status: in_progress`
-2. Execute the phase steps from `plan.md`
-3. Run `scripts/verify-fast.sh` after every file change
-4. Run `scripts/verify-full.sh` before marking a phase complete
-5. If verify passes: update `checklist.yaml` to `status: complete`, commit, move to next phase
+1. Update `.upgrade/checklist.yaml`: set current phase to `status: in_progress`
+2. Execute the phase steps from `.upgrade/plan.md`
+3. Run `.upgrade/scripts/verify-fast.sh` after every file change
+4. Run `.upgrade/scripts/verify-full.sh` before marking a phase complete
+5. If verify passes: update `.upgrade/checklist.yaml` to `status: complete`, update `.upgrade/changelog.md`, commit, move to next phase
 6. If verify fails: fix the issue, re-run verify, repeat up to 3 attempts
-7. After 3 failed attempts on the same error: log the failure in `run-log.md`, set phase `status: failed`, move on
+7. After 3 failed attempts on the same error: log the failure in `.upgrade/run-log.md`, set phase `status: failed`, move on
 
 ### Commits
 - Commit exactly once per phase: `upgrade(phase-N): <description>`
-- Include ALL changed files in the phase commit (composer.json, composer.lock, config files, checklist.yaml, run-log.md, etc.)
+- Include ALL changed files in the phase commit (composer.json, composer.lock, config files, .upgrade/checklist.yaml, .upgrade/run-log.md, .upgrade/changelog.md, etc.)
 - Do NOT make intermediate commits within a phase — one phase = one commit
 - Never commit `.env`, `database/database.sqlite`, or `/output`
 
 ### Logging
-- Append timestamped entries to `run-log.md` for:
+- Append timestamped entries to `.upgrade/run-log.md` for:
   - Phase starts and completions
   - Unexpected errors and how you resolved them
   - Decisions you made (e.g., skipping a package, choosing a migration path)
   - Evidence (test output, error messages)
+
+### Changelog
+- After completing each phase, update `.upgrade/changelog.md`:
+  - Add rows to the dependency table: Package | From | To | Notes
+  - Add entries to the Removed Packages section if any were removed
+  - Add notes about config changes, breaking changes fixed, etc.
+- This changelog will be used as the PR body, so make it useful for reviewers
 
 ### Constraints
 - **Upgrade everything to latest** — the goal is eliminating tech debt and security risks. If a major version upgrade requires code changes (namespace migrations, API changes, config updates), DO those changes. This is expected.
 - **Never change application behaviour** — inputs, outputs, and user-facing features must remain identical. Refactoring code to match a new package API is fine; changing what the code *does* is not.
 - **Never delete tests** — fix them to work with the new version
 - **Never force-install** incompatible packages — log the conflict and move on
-- **Skip unused packages** — if a package is in `composer.json` or `package.json` but is never imported/used anywhere in the codebase (no `use` statements, no `require`/`import`), remove it instead of upgrading. Log the removal in `run-log.md`.
-- If a package has no compatible version, log it in `run-log.md` and skip
+- **Skip unused packages** — if a package is in `composer.json` or `package.json` but is never imported/used anywhere in the codebase (no `use` statements, no `require`/`import`), remove it instead of upgrading. Log the removal in `.upgrade/run-log.md`. Check `.upgrade/recon-report.md` for pre-analyzed package usage.
+- If a package has no compatible version, log it in `.upgrade/run-log.md` and skip
+
+## Reference Material
+
+- `.upgrade/laravel-upgrade-guide.html` — the official Laravel upgrade guide for the target version (if available). **Read this during Phase 1** for breaking changes and required migration steps.
+- `.upgrade/recon-report.md` — pre-analyzed repo overview: package usage, component counts, test suite shape
 
 ## Verification Scripts
 
-- `scripts/verify-fast.sh` — composer validate + route:list + tests (run frequently)
-- `scripts/verify-full.sh` — above + migrate:fresh + npm build + audits (run before phase completion)
+- `.upgrade/scripts/verify-fast.sh` — composer validate + route:list + tests (run frequently)
+- `.upgrade/scripts/verify-full.sh` — above + migrate:fresh + npm build + audits (run before phase completion)
 
 ## Useful Commands
 
@@ -70,7 +84,7 @@ php artisan test --log-deprecations-while-testing
 ## Error Recovery
 
 If you encounter an error you can't resolve:
-1. Document the error, what you tried, and why it failed in `run-log.md`
-2. Set the phase status to `failed` in `checklist.yaml`
+1. Document the error, what you tried, and why it failed in `.upgrade/run-log.md`
+2. Set the phase status to `failed` in `.upgrade/checklist.yaml`
 3. Move to the next phase — a human will review failed phases
 4. Do not loop indefinitely on the same problem

@@ -13,7 +13,7 @@ Upgrade `laravel/framework` to `^${TARGET_LARAVEL}.0`. Fix all breaking changes 
 - Update `composer.json` constraint
 - Run `composer update laravel/framework --with-all-dependencies`
 - Fix deprecations and breaking changes per official upgrade guide
-- Verify: `scripts/verify-fast.sh`
+- Verify: `.upgrade/scripts/verify-fast.sh`
 
 ### Phase 2: First-Party Packages
 Upgrade Laravel first-party packages to compatible versions.
@@ -24,7 +24,7 @@ Upgrade Laravel first-party packages to compatible versions.
 - Only upgrade packages that exist in `composer.json`
 - Use `composer update --with-all-dependencies` for each
 - Fix any namespace or API changes
-- Verify: `scripts/verify-fast.sh`
+- Verify: `.upgrade/scripts/verify-fast.sh`
 
 ### Phase 3: Filament + Livewire
 Upgrade Filament and Livewire to their **latest major versions** (e.g., Filament v4/v5, not just patch updates).
@@ -35,7 +35,7 @@ Upgrade Filament and Livewire to their **latest major versions** (e.g., Filament
 - Apply all required code changes (namespace migrations, Schema API changes, config updates)
 - Update Livewire to latest major version if needed
 - Check for `livewire/flux` and `livewire/flux-pro` — upgrade if present, skip if not installed
-- Verify: `scripts/verify-fast.sh`
+- Verify: `.upgrade/scripts/verify-fast.sh`
 
 ### Phase 4: Third-Party Composer
 Bump remaining Composer packages to compatible versions.
@@ -44,7 +44,7 @@ Bump remaining Composer packages to compatible versions.
 - Run `composer outdated` to identify packages needing updates
 - Update packages in small batches
 - Fix any breaking changes
-- Verify: `scripts/verify-fast.sh` after each batch
+- Verify: `.upgrade/scripts/verify-fast.sh` after each batch
 
 ### Phase 5: NPM + Frontend
 Update ALL npm dependencies to latest major versions and verify the frontend build.
@@ -56,7 +56,7 @@ Update ALL npm dependencies to latest major versions and verify the frontend bui
 - Update `package.json` dependencies
 - Remove unused packages (not imported anywhere in resources/ or app/)
 - Remove deprecated packages
-- Verify: `npm run build` + `scripts/verify-fast.sh`
+- Verify: `npm run build` + `.upgrade/scripts/verify-fast.sh`
 
 ### Phase 6: Config Drift
 Reconcile config files against latest Laravel stubs.
@@ -65,7 +65,7 @@ Reconcile config files against latest Laravel stubs.
 - Compare config files against `laravel/laravel` stubs for target version
 - Add new config keys, remove deprecated ones
 - Do NOT override app-specific customizations
-- Verify: `scripts/verify-full.sh`
+- Verify: `.upgrade/scripts/verify-full.sh`
 
 ## Constraints
 
