@@ -23,6 +23,50 @@ templates/
   run-log.md           # Dropped into target repo — agent decision log
 ```
 
+## Design Pattern: Long-Running Agent (Nayeem Zen Playbook v8)
+
+This project implements the **Long-Running Agents Playbook** pattern. Key principles:
+
+### Core Loop: PLAN -> BUILD -> VERIFY -> AUDIT -> EVOLVE
+
+### Three-File Memory System
+
+The agent's durable memory survives context compaction and session restarts:
+
+| File | Purpose | Location |
+|------|---------|----------|
+| `plan.md` | Blueprint — phases, constraints, verification strategy | Template: `templates/plan.md` -> dropped into `/workspace` |
+| `checklist.yaml` | Executable work items with acceptance criteria and status | Template: `templates/checklist.yaml` -> dropped into `/workspace` |
+| `run-log.md` | Append-only ops log: decisions, evidence, failures, fixes | Template: `templates/run-log.md` -> dropped into `/workspace` |
+
+### Execution Loop (what the agent does per phase)
+
+1. Pick the next `not_started` task in `checklist.yaml`
+2. Re-read `plan.md` and relevant code
+3. Make the smallest change that moves the task forward
+4. Run the fastest verification that can catch the likely failure (`verify-fast.sh`)
+5. Commit a checkpoint (one commit per phase)
+6. Update `checklist.yaml` status and append to `run-log.md`
+7. Repeat
+
+### Key Patterns Applied
+
+- **Make "done" measurable** — each phase has acceptance criteria the agent proves with `verify-fast.sh` / `verify-full.sh`
+- **Keep durable memory outside chat** — the three-file system above
+- **Keep the verification loop cheap** — `verify-fast.sh` (seconds) runs after every change; `verify-full.sh` (minutes) runs at phase completion
+- **Checkpoint constantly** — one commit per phase, reversible steps
+- **Loop breaker** — after 3 failed attempts on the same error, log failure, mark phase `failed`, move on (prevents infinite loops)
+- **Ralph loop** — restart harness that relaunches Claude Code if it exits before checklist is complete (handles context exhaustion gracefully)
+- **Self-evolve** — after every run, review `run-log.md` for patterns that should become template/constraint changes
+
+### Steering Messages (for manual intervention during a run)
+
+If you need to steer the agent mid-run (via Docker exec or modifying files):
+- "Stop. You are changing files outside scope. Re-read `plan.md`, then continue with the next checklist task only."
+- "You are stuck in retries. Write a short diagnosis in `run-log.md`, then change approach."
+- "Commit a checkpoint now. Then run the fast loop and paste only the summary."
+- "Do the smallest safe step next. No refactors. One file. One test. One commit."
+
 ## Key Concepts
 
 - **Templates** use `${TARGET_LARAVEL}` and `${UPGRADE_DATE}` — substituted by `envsubst` in entrypoint.sh
