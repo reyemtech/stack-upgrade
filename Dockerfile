@@ -1,23 +1,29 @@
+# ── Stage 1: Builder — compile PHP extensions ──────────────────────────
+FROM php:8.4-cli-bookworm AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libzip-dev libxml2-dev libcurl4-openssl-dev \
+    libonig-dev libicu-dev libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN docker-php-ext-install -j$(nproc) \
+    pdo_sqlite \
+    zip mbstring xml curl bcmath pcntl intl
+
+# ── Stage 2: Final — lean runtime image ────────────────────────────────
 FROM php:8.4-cli-bookworm
 
-# System deps (matching reyemtech/sail extensions)
+# Runtime libraries (no -dev packages)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git ssh-client unzip curl sqlite3 libsqlite3-dev \
-    libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev \
-    libzip-dev libxml2-dev libcurl4-openssl-dev \
-    libpq-dev libonig-dev libicu-dev libsodium-dev \
+    libzip4 libxml2 libcurl4 \
+    libonig5 libicu72 \
+    git ssh-client unzip curl \
     gettext-base jq \
     && rm -rf /var/lib/apt/lists/*
 
-# PHP extensions (matching reyemtech/sail)
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j$(nproc) \
-    pdo_mysql pdo_pgsql pdo_sqlite pgsql \
-    gd zip mbstring xml curl bcmath pcntl intl \
-    exif opcache sodium
-
-# Redis extension
-RUN pecl install redis && docker-php-ext-enable redis
+# Copy compiled PHP extensions from builder
+COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
