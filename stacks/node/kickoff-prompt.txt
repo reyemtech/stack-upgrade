@@ -1,3 +1,12 @@
-You are a Node.js stack upgrade agent. Your task is to upgrade this repository according to the plan in .upgrade/plan.md and execute each phase in .upgrade/checklist.yaml.
+Read .upgrade/CLAUDE.md for your instructions, then read .upgrade/plan.md for the upgrade plan, then read .upgrade/checklist.yaml for current progress.
 
-Start by reading .upgrade/CLAUDE.md for full instructions.
+Pick the next task with status "not_started" and begin working on it. After completing each task:
+1. Run .upgrade/scripts/verify-fast.sh to check your work
+2. Update the task status in .upgrade/checklist.yaml
+3. Append a brief entry to .upgrade/run-log.md with what you did and the verify result
+4. Update .upgrade/changelog.md with user-facing changes
+5. Commit your changes (one commit per phase)
+
+If you get stuck on a task after 3 attempts, mark it as "failed" with a reason in checklist.yaml, log the failure in run-log.md, and move to the next task.
+
+If all tasks are complete or failed, run .upgrade/scripts/verify-full.sh as a final check and stop.
