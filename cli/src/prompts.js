@@ -70,16 +70,3 @@ export async function askRunTarget({ hasDocker, hasKubectl }) {
   if (p.isCancel(target)) process.exit(0);
   return target;
 }
-
-/**
- * Prompt to add another upgrade to the queue.
- * @returns {Promise<boolean>}
- */
-export async function askAddAnother() {
-  const another = await p.confirm({
-    message: 'Add another upgrade?',
-    initialValue: false,
-  });
-  if (p.isCancel(another)) process.exit(0);
-  return another;
-}

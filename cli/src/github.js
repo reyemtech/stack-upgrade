@@ -88,23 +88,32 @@ export async function discoverRepos() {
 }
 
 /**
- * Prompt user to select a repo or enter manually.
- * @param {Array} repos
+ * Prompt for a manual repo URL and return a repo object.
  * @returns {Promise<{ name: string, url: string, stack: string, version: string }>}
  */
-export async function selectRepo(repos) {
-  if (repos.length === 0) {
-    const url = await p.text({
-      message: 'Enter the repository URL:',
-      placeholder: 'https://github.com/org/repo.git',
-      validate: (v) => {
-        if (!v) return 'URL is required';
-        if (!v.includes('github.com')) return 'Must be a GitHub URL';
-      },
-    });
-    if (p.isCancel(url)) process.exit(0);
+async function promptManualUrl() {
+  const url = await p.text({
+    message: 'Enter the repository URL:',
+    placeholder: 'https://github.com/org/repo.git',
+    validate: (v) => {
+      if (!v) return 'URL is required';
+      if (!v.includes('github.com')) return 'Must be a GitHub URL';
+    },
+  });
+  if (p.isCancel(url)) process.exit(0);
 
-    return { name: url.replace(/.*github\.com[:/]/, '').replace(/\.git$/, ''), url, stack: 'laravel', version: 'unknown' };
+  return { name: url.replace(/.*github\.com[:/]/, '').replace(/\.git$/, ''), url, stack: 'laravel', version: 'unknown' };
+}
+
+/**
+ * Prompt user to select one or more repos (or enter manually).
+ * @param {Array} repos
+ * @returns {Promise<Array<{ name: string, url: string, stack: string, version: string }>>}
+ */
+export async function selectRepos(repos) {
+  if (repos.length === 0) {
+    const repo = await promptManualUrl();
+    return [repo];
   }
 
   const options = repos.map((r) => ({
@@ -114,24 +123,22 @@ export async function selectRepo(repos) {
   }));
   options.push({ value: 'manual', label: 'Enter URL manually' });
 
-  const choice = await p.select({
-    message: 'Which repo do you want to upgrade?',
+  const choices = await p.multiselect({
+    message: 'Which repos do you want to upgrade?',
     options,
+    required: true,
   });
-  if (p.isCancel(choice)) process.exit(0);
+  if (p.isCancel(choices)) process.exit(0);
 
-  if (choice === 'manual') {
-    const url = await p.text({
-      message: 'Enter the repository URL:',
-      placeholder: 'https://github.com/org/repo.git',
-      validate: (v) => {
-        if (!v) return 'URL is required';
-      },
-    });
-    if (p.isCancel(url)) process.exit(0);
-
-    return { name: url.replace(/.*github\.com[:/]/, '').replace(/\.git$/, ''), url, stack: 'laravel', version: 'unknown' };
+  const selected = [];
+  for (const choice of choices) {
+    if (choice === 'manual') {
+      const repo = await promptManualUrl();
+      selected.push(repo);
+    } else {
+      selected.push(choice);
+    }
   }
 
-  return choice;
+  return selected;
 }

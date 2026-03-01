@@ -2,9 +2,9 @@
 
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
-import { getGhToken, getGhUser, discoverRepos, selectRepo } from './github.js';
+import { getGhToken, getGhUser, discoverRepos, selectRepos } from './github.js';
 import { detectClaudeCredentials } from './credentials.js';
-import { askRunTarget, askTargetVersion, askPush, askSuffix, askAddAnother } from './prompts.js';
+import { askRunTarget, askTargetVersion, askPush, askSuffix } from './prompts.js';
 import { hasDocker, launchDocker } from './docker.js';
 import { hasKubectl, launchKubernetes } from './kubectl.js';
 import { getConfig, saveConfig } from './config.js';
@@ -71,22 +71,28 @@ async function main() {
   const push = await askPush();
   const suffix = await askSuffix();
 
-  // --- Multi-upgrade loop ---
-  const upgrades = [];
+  // --- Repo selection ---
+  const selectedRepos = await selectRepos(repos);
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const repo = await selectRepo(repos);
-
-    // Resolve stack
+  // Resolve stacks for each repo
+  const repoStacks = selectedRepos.map((repo) => {
     const stackConfig = getStack(repo.stack);
     if (!stackConfig) {
       p.log.warn(`Unknown stack: ${repo.stack}. Defaulting to Laravel.`);
     }
-    const stack = stackConfig || getStack('laravel');
+    return { repo, stack: stackConfig || getStack('laravel') };
+  });
 
-    const targetVersion = await askTargetVersion(stack.versionLabel);
+  // If all repos share the same stack, ask target version once; otherwise per-repo
+  const uniqueStacks = new Set(repoStacks.map((rs) => rs.repo.stack));
+  let sharedVersion = null;
+  if (uniqueStacks.size === 1) {
+    sharedVersion = await askTargetVersion(repoStacks[0].stack.versionLabel);
+  }
 
+  const upgrades = [];
+  for (const { repo, stack } of repoStacks) {
+    const targetVersion = sharedVersion || await askTargetVersion(`${stack.versionLabel} for ${repo.name}`);
     const branchName = suffix
       ? `${stack.branchPrefix}-${targetVersion}-${suffix}`
       : `${stack.branchPrefix}-${targetVersion}`;
@@ -105,20 +111,23 @@ async function main() {
       envKey: stack.envKey,
       branchName,
     });
-
-    const another = await askAddAnother();
-    if (!another) break;
   }
 
   // --- Confirmation ---
-  const summaryLines = upgrades.map((u, i) =>
-    `  ${i + 1}. ${u.repoName}    ${u.stackName} → ${u.targetVersion}    ${target === 'docker' ? 'Local Docker' : 'Kubernetes'}`,
-  );
+  const targetLabel = target === 'docker' ? 'Local Docker' : 'Kubernetes';
+  const maxName = Math.max(...upgrades.map((u) => u.repoName.length));
+  const maxStack = Math.max(...upgrades.map((u) => `${u.stackName} → ${u.targetVersion}`.length));
+
+  const summaryLines = upgrades.map((u, i) => {
+    const name = u.repoName.padEnd(maxName);
+    const stack = `${u.stackName} → ${u.targetVersion}`.padEnd(maxStack);
+    return `  ${i + 1}. ${name}  ${stack}  ${targetLabel}`;
+  });
 
   p.note([
     ...summaryLines,
     '',
-    `Push+PR: ${push ? 'yes' : 'no'}${suffix ? `    Suffix: ${suffix}` : ''}`,
+    `Push+PR: ${push ? 'yes' : 'no'}${suffix ? `  Suffix: ${suffix}` : ''}`,
   ].join('\n'), `Ready to launch ${upgrades.length} ${upgrades.length === 1 ? 'upgrade' : 'upgrades'}`);
 
   const confirm = await p.confirm({ message: 'Launch now?' });
