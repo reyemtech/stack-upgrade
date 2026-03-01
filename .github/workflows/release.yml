@@ -48,7 +48,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -57,14 +56,13 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
-      - name: Upgrade npm
-        run: npm install -g npm@latest
-
       - name: Publish CLI to npm
         working-directory: cli
         run: |
           npm version ${{ needs.release.outputs.new_release_version }} --no-git-tag-version
-          npm publish --access public --provenance
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # Build each platform natively per stack (no QEMU emulation)
   build:
