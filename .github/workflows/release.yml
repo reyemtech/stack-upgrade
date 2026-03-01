@@ -48,6 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -60,9 +61,7 @@ jobs:
         working-directory: cli
         run: |
           npm version ${{ needs.release.outputs.new_release_version }} --no-git-tag-version
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm publish --access public --provenance
 
   # Build each platform natively per stack (no QEMU emulation)
   build:
