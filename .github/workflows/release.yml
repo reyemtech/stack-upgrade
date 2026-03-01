@@ -11,7 +11,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   release:
@@ -43,7 +42,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Build each platform natively (no QEMU emulation)
+  npm-publish:
+    needs: [release]
+    if: needs.release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish CLI to npm
+        working-directory: cli
+        run: |
+          npm version ${{ needs.release.outputs.new_release_version }} --no-git-tag-version
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Build each platform natively per stack (no QEMU emulation)
   build:
     needs: [release]
     if: |
@@ -55,6 +76,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
+        stack: [laravel]
         include:
           - platform: linux/amd64
             runner: ubuntu-latest
@@ -79,11 +101,11 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: stacks/${{ matrix.stack }}
           platforms: ${{ matrix.platform }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.platform }}
-          cache-to: type=gha,scope=${{ matrix.platform }},mode=max
+          outputs: type=image,name=${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.stack }}-${{ matrix.platform }}
+          cache-to: type=gha,scope=${{ matrix.stack }}-${{ matrix.platform }},mode=max
 
       - name: Export digest
         run: |
@@ -94,18 +116,21 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ matrix.runner }}
+          name: digests-${{ matrix.stack }}-${{ matrix.runner }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
-  # Merge per-platform images into a single multi-arch manifest
+  # Merge per-platform images into a single multi-arch manifest per stack
   publish:
     needs: [release, build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        stack: [laravel]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -136,7 +161,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent
           tags: |
             type=raw,value=latest
             type=semver,pattern={{version}},value=${{ steps.version.outputs.tag }}
@@ -148,7 +173,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
-          pattern: digests-*
+          pattern: digests-${{ matrix.stack }}-*
           merge-multiple: true
 
       - name: Create manifest list and push
@@ -156,8 +181,8 @@ jobs:
         run: |
           docker buildx imagetools create \
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+            $(printf '${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent:${{ steps.meta.outputs.version }}

@@ -4,7 +4,6 @@ set -e
 # Validate required env vars
 : "${REPO_URL:?REPO_URL is required}"
 : "${TARGET_LARAVEL:?TARGET_LARAVEL is required}"
-: "${GIT_SSH_KEY_B64:?GIT_SSH_KEY_B64 is required}"
 
 # Auth: support both Anthropic API key and Claude Max OAuth token
 if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
@@ -12,11 +11,21 @@ if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
   exit 1
 fi
 
-# Setup SSH
-mkdir -p ~/.ssh
-echo "$GIT_SSH_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
-chmod 600 ~/.ssh/id_ed25519
-ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+# Setup repo access: SSH key or HTTPS via GH_TOKEN
+if [ -n "$GIT_SSH_KEY_B64" ]; then
+  mkdir -p ~/.ssh
+  echo "$GIT_SSH_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
+  chmod 600 ~/.ssh/id_ed25519
+  ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+elif [ -n "$GH_TOKEN" ]; then
+  git config --global credential.helper '!f() { echo "password=$GH_TOKEN"; }; f'
+  if echo "$REPO_URL" | grep -q '^git@'; then
+    REPO_URL=$(echo "$REPO_URL" | sed 's|^git@github.com:|https://github.com/|; s|\.git$||').git
+  fi
+else
+  echo "ERROR: Set either GIT_SSH_KEY_B64 (SSH) or GH_TOKEN (HTTPS) for repo access"
+  exit 1
+fi
 
 # Configure git
 git config --global user.name "Laravel Upgrade Agent"

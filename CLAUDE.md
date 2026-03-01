@@ -1,28 +1,48 @@
-# CLAUDE.md — Laravel Upgrade Agent (Dev)
+# CLAUDE.md — Stack Upgrade Agent (Dev)
 
-Instructions for developing the laravel-upgrade-agent itself (not for the agent running inside Docker).
+Instructions for developing the stack-upgrade project itself (not for the agent running inside Docker).
 
 ## What This Project Is
 
-A disposable Docker image that runs Claude Code autonomously to upgrade any Laravel app. It clones a repo, creates an `upgrade/laravel-{version}` branch, works through 7 phases, commits per phase, and pushes. Optionally creates a PR with a generated changelog.
+A multi-stack monorepo of disposable Docker images that run Claude Code autonomously to upgrade applications. Each stack (Laravel, React, Rails, etc.) lives in `stacks/{name}/` with its own Dockerfile, entrypoint, templates, and scripts. A shared CLI (`@reyemtech/stack-upgrade`) handles repo discovery, stack detection, and launching upgrades via Docker or Kubernetes.
+
+Currently supports **Laravel**. Future stacks are added by creating a new `stacks/{name}/` directory and registering it in `cli/src/stacks.js`.
 
 ## Architecture
 
 ```
-entrypoint.sh          # Clone repo, setup branch, install deps, recon, drop templates, launch ralph loop
-scripts/ralph-loop.sh  # Restart loop — relaunches Claude Code if it exits before checklist complete
-scripts/recon.sh       # Pre-run repo analysis — produces .upgrade/recon-report.md
-scripts/verify-fast.sh # Quick check: composer validate + route:list + tests
-scripts/verify-full.sh # Full check: above + migrate:fresh + npm build + audits
-scripts/stream-pretty.sh # Prettifies Claude Code stream-json output for logs
-kickoff-prompt.txt     # Initial prompt sent to Claude Code inside the container
-Dockerfile             # PHP 8.4, Node 22, Composer 2, gh CLI, Claude Code CLI, non-root user
-templates/
-  CLAUDE.md            # Dropped into .upgrade/ — agent instructions (NOT this file)
-  plan.md              # Dropped into .upgrade/ — 6-phase upgrade plan (uses envsubst)
-  checklist.yaml       # Dropped into .upgrade/ — phase tracking (uses envsubst)
-  run-log.md           # Dropped into .upgrade/ — agent decision log
-  changelog.md         # Dropped into .upgrade/ — agent-maintained changelog (used as PR body)
+cli/                           # Shared CLI — @reyemtech/stack-upgrade
+  src/
+    index.js                   # Entry point — multi-upgrade loop
+    stacks.js                  # Stack registry (detection, image, env keys)
+    github.js                  # Repo discovery via gh CLI
+    docker.js                  # Docker launcher (multi-container)
+    kubectl.js                 # Kubernetes launcher (multi-pod)
+    prompts.js                 # Interactive prompts
+    pod-name.js                # Container/pod name derivation
+    config.js                  # ~/.stack-upgrade/config.json
+    credentials.js             # Claude credential detection
+  package.json
+
+stacks/laravel/                # Laravel upgrade stack
+  Dockerfile                   # PHP 8.4, Node 22, Composer 2, gh CLI, Claude Code CLI
+  entrypoint.sh                # Clone repo, setup branch, install deps, recon, drop templates, launch ralph loop
+  kickoff-prompt.txt           # Initial prompt sent to Claude Code inside the container
+  scripts/
+    ralph-loop.sh              # Restart loop — relaunches Claude Code if it exits before checklist complete
+    recon.sh                   # Pre-run repo analysis — produces .upgrade/recon-report.md
+    verify-fast.sh             # Quick check: composer validate + route:list + tests
+    verify-full.sh             # Full check: above + migrate:fresh + npm build + audits
+    stream-pretty.sh           # Prettifies Claude Code stream-json output for logs
+  templates/
+    CLAUDE.md                  # Dropped into .upgrade/ — agent instructions (NOT this file)
+    plan.md                    # Dropped into .upgrade/ — 7-phase upgrade plan (uses envsubst)
+    checklist.yaml             # Dropped into .upgrade/ — phase tracking (uses envsubst)
+    run-log.md                 # Dropped into .upgrade/ — agent decision log
+    changelog.md               # Dropped into .upgrade/ — agent-maintained changelog (used as PR body)
+
+.github/workflows/release.yml # CI/CD — semantic-release + npm publish + matrix Docker build per stack
+.releaserc.json                # semantic-release config
 ```
 
 ### Workspace Layout (inside container)
@@ -58,9 +78,9 @@ The agent's durable memory survives context compaction and session restarts:
 
 | File | Purpose | Location |
 |------|---------|----------|
-| `plan.md` | Blueprint — phases, constraints, verification strategy | Template: `templates/plan.md` -> dropped into `.upgrade/` |
-| `checklist.yaml` | Executable work items with acceptance criteria and status | Template: `templates/checklist.yaml` -> dropped into `.upgrade/` |
-| `run-log.md` | Append-only ops log: decisions, evidence, failures, fixes | Template: `templates/run-log.md` -> dropped into `.upgrade/` |
+| `plan.md` | Blueprint — phases, constraints, verification strategy | Template: `stacks/laravel/templates/plan.md` -> dropped into `.upgrade/` |
+| `checklist.yaml` | Executable work items with acceptance criteria and status | Template: `stacks/laravel/templates/checklist.yaml` -> dropped into `.upgrade/` |
+| `run-log.md` | Append-only ops log: decisions, evidence, failures, fixes | Template: `stacks/laravel/templates/run-log.md` -> dropped into `.upgrade/` |
 
 ### Execution Loop (what the agent does per phase)
 
@@ -80,7 +100,7 @@ The agent's durable memory survives context compaction and session restarts:
 - **Checkpoint constantly** — one commit per phase, reversible steps
 - **Loop breaker** — after 3 failed attempts on the same error, log failure, mark phase `failed`, move on (prevents infinite loops)
 - **Ralph loop** — restart harness that relaunches Claude Code if it exits before checklist is complete (handles context exhaustion gracefully)
-- **Recon before action** — `scripts/recon.sh` maps the repo (package usage, component counts, test shape) before the agent starts
+- **Recon before action** — `stacks/laravel/scripts/recon.sh` maps the repo (package usage, component counts, test shape) before the agent starts
 - **Self-evolve** — after every run, review `run-log.md` for patterns that should become template/constraint changes
 
 ### Steering Messages (for manual intervention during a run)
@@ -94,18 +114,18 @@ If you need to steer the agent mid-run (via Docker exec or modifying files):
 ## Key Concepts
 
 - **Templates** use `${TARGET_LARAVEL}` and `${UPGRADE_DATE}` — substituted by `envsubst` in entrypoint.sh
-- **Ralph loop** (`scripts/ralph-loop.sh`) restarts Claude Code up to `MAX_RESTARTS` times if checklist has incomplete tasks
-- **Branch handling** (`entrypoint.sh`): checks if remote branch exists first — if yes, checks out and rebases; if no, creates fresh. Supports `BRANCH_SUFFIX` for repeat runs.
+- **Ralph loop** (`stacks/laravel/scripts/ralph-loop.sh`) restarts Claude Code up to `MAX_RESTARTS` times if checklist has incomplete tasks
+- **Branch handling** (`stacks/laravel/entrypoint.sh`): checks if remote branch exists first — if yes, checks out and rebases; if no, creates fresh. Supports `BRANCH_SUFFIX` for repeat runs.
 - **One commit per phase** — no intermediate commits within a phase
 - **Push + PR** — push happens at end of ralph-loop.sh (controlled by `GIT_PUSH`). If `GH_TOKEN` is set, a PR is auto-created using `.upgrade/changelog.md` as the body.
 - **Structured exit** — exit 0 = all complete, exit 1 = incomplete. `/output/result.json` has outcome summary.
 - **Status monitoring** — `/output/status.json` is updated throughout the run for external monitoring.
 - **Dependency snapshots** — before/after JSON snapshots of composer and npm packages saved to `/output/` for diff-based review.
-- **Recon** — `scripts/recon.sh` produces `.upgrade/recon-report.md` with package usage analysis, component counts, test suite shape.
+- **Recon** — `stacks/laravel/scripts/recon.sh` produces `.upgrade/recon-report.md` with package usage analysis, component counts, test suite shape.
 - **Upgrade guide** — official Laravel upgrade docs fetched and saved to `.upgrade/laravel-upgrade-guide.html`.
 - **No CLAUDE.md overwrite** — upgrade instructions go to `.upgrade/CLAUDE.md`; the target repo's own `CLAUDE.md` is preserved.
 
-## Upgrade Philosophy (templates/CLAUDE.md + templates/plan.md)
+## Upgrade Philosophy (stacks/laravel/templates/CLAUDE.md + stacks/laravel/templates/plan.md)
 
 These files define what the agent does inside the container:
 
@@ -113,6 +133,20 @@ These files define what the agent does inside the container:
 - **Never change application behaviour** — refactoring for package API changes is fine, changing what the code does is not.
 - **Skip unused packages** — if not imported/used anywhere, remove instead of upgrading.
 - **7 phases:** Core Framework > First-Party > Filament+Livewire > Third-Party Composer > NPM+Frontend > Config Drift+README > PHP Version
+
+## CLI
+
+The CLI (`cli/`) is published as `@reyemtech/stack-upgrade` (binary: `stack-upgrade`). It:
+
+1. Auto-detects Claude credentials (OAuth or API key) from multiple sources
+2. Discovers repos via GitHub CLI, detects stack type from `composer.json`
+3. Supports queuing multiple upgrades to run in parallel
+4. Launches via Docker (local) or Kubernetes (remote cluster)
+5. Persists preferences to `~/.stack-upgrade/config.json`
+
+### Stack Registry (`cli/src/stacks.js`)
+
+Each stack is registered with: name, Docker image, detection function, version prompt label, branch prefix, and env key. Adding a new stack means adding an entry here.
 
 ## Environment Variables
 
@@ -155,8 +189,8 @@ After a run, `/output/` contains:
 ## Dev Workflow
 
 ```bash
-# Build
-docker build -t laravel-upgrade-agent .
+# Build Laravel stack
+docker build -t laravel-upgrade-agent stacks/laravel/
 
 # Test run (no push)
 docker run --rm \
@@ -168,44 +202,20 @@ docker run --rm \
   -v ./output:/output \
   laravel-upgrade-agent
 
-# Test run with branch suffix and auto PR
-docker run --rm \
-  -e REPO_URL=git@github.com:org/repo.git \
-  -e TARGET_LARAVEL=12 \
-  -e BRANCH_SUFFIX=$(date +%Y-%m-%d) \
-  -e GH_TOKEN=$GH_TOKEN \
-  -e CLAUDE_CODE_OAUTH_TOKEN=$CLAUDE_CODE_OAUTH_TOKEN \
-  -e GIT_SSH_KEY_B64=$(base64 < ~/.ssh/deploy_key) \
-  -v ./output:/output \
-  laravel-upgrade-agent
+# Test CLI
+cd cli && npm install && npm link && stack-upgrade
 
 # Check output
 cat output/result.json
 cat output/changelog.md
-cat output/run-log.md
-cat output/checklist.yaml
-cat output/commits.log
-
-# Compare dependency changes
-diff <(jq -r '.installed[] | .name' output/before-composer.json | sort) \
-     <(jq -r '.installed[] | .name' output/after-composer.json | sort)
 ```
 
-## Recent Changes
+## Adding a New Stack
 
-- **`.upgrade/` folder** — all upgrade artifacts now live in `.upgrade/` instead of the workspace root; target repo's `CLAUDE.md` is preserved
-- **Recon phase** — `scripts/recon.sh` maps package usage, component counts, and test shape before the agent starts
-- **Changelog** — agent maintains `.upgrade/changelog.md` per phase; used as PR body
-- **Upgrade guide fetch** — official Laravel upgrade docs fetched to `.upgrade/laravel-upgrade-guide.html`
-- **Dependency snapshots** — before/after JSON snapshots for diff-based review
-- **Structured exit** — exit 0/1 with `/output/result.json` summary
-- **Status monitoring** — `/output/status.json` updated throughout for external monitoring
-- **Auto PR** — `gh pr create` when `GH_TOKEN` is set
-- **Branch suffix** — `BRANCH_SUFFIX` env var for repeat runs without collision
-- **Branch reuse** — entrypoint.sh checks for existing remote branch and rebases instead of blindly creating
-- **Upgrade philosophy** — "never modify business logic" replaced with "never change application behaviour" so major package upgrades proceed with required code changes
-- **Unused package removal** — agent removes packages not imported anywhere instead of upgrading them
-- **Flux/flux-pro awareness** — Phase 3 checks for livewire/flux and livewire/flux-pro
+1. Create `stacks/{name}/` with `Dockerfile`, `entrypoint.sh`, `templates/`, and `scripts/`
+2. Add the stack to `cli/src/stacks.js` with detection logic, image name, and env key
+3. Add the stack to the `matrix.stack` array in `.github/workflows/release.yml`
+4. Image will be published as `ghcr.io/reyemtech/{name}-upgrade-agent`
 
 ## Commit Convention
 
@@ -224,21 +234,23 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/) f
 | `refactor` | Code restructuring, no behavior change | No release |
 | `test` | Adding or fixing tests | No release |
 
-**Scopes** (optional but encouraged): `entrypoint`, `ralph`, `recon`, `templates`, `dockerfile`, `ci`
+**Scopes** (optional but encouraged): `entrypoint`, `ralph`, `recon`, `templates`, `dockerfile`, `ci`, `cli`, `stacks`
 
 **Examples:**
 ```
 fix(ralph): handle missing checklist.yaml on restart
+feat(cli): add multi-upgrade queue support
 feat(entrypoint): add BRANCH_SUFFIX env var for repeat runs
-feat!: move all artifacts to .upgrade/ folder
+feat!: restructure as multi-stack monorepo
 docs: update README with new output artifacts
 chore(dockerfile): bump Node to 22.x
-ci: add semantic-release workflow
+ci: add npm-publish job and matrix build per stack
 ```
 
 ## File Editing Rules
 
-- `templates/` files are what the agent sees inside the container — changes here affect agent behaviour
-- `entrypoint.sh` and `scripts/` are the orchestration layer — changes here affect the run lifecycle
-- `Dockerfile` rarely needs changes unless adding system deps or upgrading Claude Code
+- `stacks/laravel/templates/` files are what the agent sees inside the container — changes here affect agent behaviour
+- `stacks/laravel/entrypoint.sh` and `stacks/laravel/scripts/` are the orchestration layer — changes here affect the run lifecycle
+- `stacks/laravel/Dockerfile` rarely needs changes unless adding system deps or upgrading Claude Code
+- `cli/src/stacks.js` is the stack registry — add new stacks here
 - Always test changes with `GIT_PUSH=false` first

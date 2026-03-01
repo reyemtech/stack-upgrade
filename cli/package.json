@@ -1,0 +1,25 @@
+{
+  "name": "@reyemtech/stack-upgrade",
+  "version": "0.0.0-semantically-released",
+  "description": "CLI to launch Stack Upgrade Agents via Docker or Kubernetes",
+  "type": "module",
+  "bin": {
+    "stack-upgrade": "src/index.js"
+  },
+  "files": [
+    "src/"
+  ],
+  "dependencies": {
+    "@clack/prompts": "^0.10",
+    "picocolors": "^1.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ReyemTech/stack-upgrade.git",
+    "directory": "cli"
+  },
+  "license": "MIT"
+}
