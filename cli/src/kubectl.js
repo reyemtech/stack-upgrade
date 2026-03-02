@@ -125,11 +125,9 @@ async function selectNamespace() {
  */
 function ensureSecret(namespace, ghToken, claudeCreds) {
   try {
-    execFileSync('kubectl', ['get', 'secret', SECRET_NAME, '-n', namespace], { stdio: 'ignore' });
-    p.log.info(`Secret "${SECRET_NAME}" exists in namespace "${namespace}"`);
-    return;
+    execFileSync('kubectl', ['delete', 'secret', SECRET_NAME, '-n', namespace], { stdio: 'ignore' });
   } catch {
-    // Secret doesn't exist — create it
+    // Secret didn't exist — nothing to delete
   }
 
   p.log.info(`Creating secret "${SECRET_NAME}" in namespace "${namespace}"...`);
