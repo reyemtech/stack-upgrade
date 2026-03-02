@@ -1,3 +1,53 @@
-# Vite+React Upgrade Checklist
-# Phase 2 will populate with real phases
-phases: []
+# Vite ${TARGET_VITE} + React ${TARGET_REACT} Upgrade Checklist
+# Generated: ${UPGRADE_DATE}
+
+phases:
+  - id: 1
+    name: React Version Bump + Codemod
+    status: not_started
+    description: Upgrade react and react-dom to ${TARGET_REACT} and run codemods for breaking changes
+    acceptance:
+      - react and react-dom at target version in package.json
+      - react-codemod completed (replace-string-literal-ref, replace-act-import)
+      - codemod output committed separately
+      - verify-fast.sh passes
+
+  - id: 2
+    name: Vite Version Bump + Plugin Update
+    status: not_started
+    description: Upgrade vite to ${TARGET_VITE} and @vitejs/plugin-react to latest
+    acceptance:
+      - vite at target version in package.json
+      - "@vitejs/plugin-react at latest compatible version"
+      - all other vite plugins updated to compatible versions
+      - verify-fast.sh passes
+
+  - id: 3
+    name: Vite Config Format Changes
+    status: not_started
+    description: Audit and update vite.config for deprecated options in Vite ${TARGET_VITE}
+    acceptance:
+      - no deprecated vite.config options (legacy.proxySsrExternalModules removed if present)
+      - resolve.conditions updated with defaultClientConditions or defaultServerConditions if custom values were set
+      - css.preprocessorOptions.sass.api legacy value removed if present
+      - json.stringify and json.namedExports conflict resolved if present
+      - vite build passes with no deprecation warnings
+
+  - id: 4
+    name: TypeScript Types Codemod
+    status: not_started
+    description: Run types-react-codemod preset-19 for React ${TARGET_REACT} type changes (TypeScript projects only)
+    acceptance:
+      - types-react-codemod completed (or skipped with reason logged if not a TypeScript project)
+      - tsc --noEmit passes with no type errors (if TypeScript)
+      - verify-fast.sh passes
+
+  - id: 5
+    name: Build Verify + Dependency Cleanup
+    status: not_started
+    description: Full verification pass and cleanup of outdated and unused dependencies
+    acceptance:
+      - verify-full.sh passes (lint + tests + tsc + build + npm audit)
+      - no outdated major dependencies (or decisions logged for each skip)
+      - unused packages removed and logged
+      - final verify-full.sh passes clean
