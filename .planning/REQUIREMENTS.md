@@ -19,13 +19,13 @@
 
 ### Next.js
 
-- [ ] **NEXT-01**: Run @next/codemod upgrade for automated transforms
-- [ ] **NEXT-02**: Handle async request API migration (params, searchParams, cookies, headers)
-- [ ] **NEXT-03**: Migrate middleware to v2 compatibility
-- [ ] **NEXT-04**: Migrate to Turbopack config (webpack → turbopack where applicable)
-- [ ] **NEXT-05**: Verify build succeeds (next build)
-- [ ] **NEXT-06**: Audit cache semantics for v15+ no-store default change
-- [ ] **NEXT-07**: Grep for codemod markers (UnsafeUnwrapped, @next/codemod) and resolve or document
+- [x] **NEXT-01**: Run @next/codemod upgrade for automated transforms
+- [x] **NEXT-02**: Handle async request API migration (params, searchParams, cookies, headers)
+- [x] **NEXT-03**: Migrate middleware to v2 compatibility
+- [x] **NEXT-04**: Migrate to Turbopack config (webpack → turbopack where applicable)
+- [x] **NEXT-05**: Verify build succeeds (next build)
+- [x] **NEXT-06**: Audit cache semantics for v15+ no-store default change
+- [x] **NEXT-07**: Grep for codemod markers (UnsafeUnwrapped, @next/codemod) and resolve or document
 
 ### CRA Migration
 
@@ -111,13 +111,13 @@
 | INFRA-07 | Phase 1 | Complete |
 | INFRA-08 | Phase 1 | Complete |
 | INFRA-09 | Phase 1 | Complete |
-| NEXT-01 | Phase 2 | Pending |
-| NEXT-02 | Phase 2 | Pending |
-| NEXT-03 | Phase 2 | Pending |
-| NEXT-04 | Phase 2 | Pending |
-| NEXT-05 | Phase 2 | Pending |
-| NEXT-06 | Phase 2 | Pending |
-| NEXT-07 | Phase 2 | Pending |
+| NEXT-01 | Phase 2 | Complete |
+| NEXT-02 | Phase 2 | Complete |
+| NEXT-03 | Phase 2 | Complete |
+| NEXT-04 | Phase 2 | Complete |
+| NEXT-05 | Phase 2 | Complete |
+| NEXT-06 | Phase 2 | Complete |
+| NEXT-07 | Phase 2 | Complete |
 | CRA-01 | Phase 2 | Complete |
 | CRA-02 | Phase 2 | Complete |
 | CRA-03 | Phase 2 | Complete |

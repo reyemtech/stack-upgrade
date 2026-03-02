@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-02T02:48:51.372Z"
+last_updated: "2026-03-02T02:54:18.767Z"
 progress:
   total_phases: 2
   completed_phases: 2
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 
 Phase: 2 of 4 (Web JS Agent Templates)
 Plan: 3 of 3 in current phase
-Status: In progress
-Last activity: 2026-03-01 — Completed 02-03 (Vite+React CLAUDE.md, plan.md, checklist.yaml)
+Status: Phase complete (all 3 plans done)
+Last activity: 2026-03-02 — Completed 02-01 (Next.js CLAUDE.md, plan.md, checklist.yaml, entrypoint.sh fix)
 
-Progress: [████░░░░░░] 42%
+Progress: [████░░░░░░] 50%
 
 ## Performance Metrics
 
@@ -81,6 +81,9 @@ Recent decisions affecting current work:
 - [Phase 02-web-js-agent-templates]: REACT_APP_ documented as BUILD BLOCKER in CRA CLAUDE.md — viject does not rewrite these, agent must do it manually in Phase 2
 - [Phase 02-web-js-agent-templates]: Jest-to-Vitest is Phase 8 (last) in CRA migration — Jest kept as safety net throughout build migration phases 1-7
 - [Phase 02-web-js-agent-templates]: CI/CD REACT_APP_ references flagged but NOT modified by CRA agent — documented for human maintainer review only
+- [Phase 02-web-js-agent-templates]: UnsafeUnwrapped and @next/codemod markers are BUILD BLOCKERS in Next.js CLAUDE.md — verify-fast.sh exits non-zero on them
+- [Phase 02-web-js-agent-templates]: Next.js middleware/proxy uses next build + curl smoke test for Edge runtime verification — not Jest/Vitest (incompatible)
+- [Phase 02-web-js-agent-templates]: entrypoint.sh nextjs) case fetches version-specific URL (version-N) when TARGET_NEXTJS set, falls back to generic URL
 
 ### Pending Todos
 
@@ -88,11 +91,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 2] Next.js middleware verification without integration tests is unresolved — middleware runs at Edge runtime, not testable with Jest/Vitest. Approach: next build check + curl against next start. Validate during Phase 2 template design.
+- [Phase 2] Next.js middleware verification RESOLVED — Middleware Verification Note in CLAUDE.md documents: use next build + curl against next start for smoke testing; if next start unavailable, document in run-log.md and rely on next build for static validation only.
 - [Phase 3] React Native Upgrade Helper programmatic access (web UI vs rn-diff-purge raw data vs embedded diff) is unresolved. Address during Phase 3 planning.
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Completed 02-03-PLAN.md (Vite+React CLAUDE.md, plan.md, checklist.yaml)
+Last session: 2026-03-02
+Stopped at: Completed 02-01-PLAN.md (Next.js CLAUDE.md, plan.md, checklist.yaml, entrypoint.sh version-specific URL fix)
 Resume file: None

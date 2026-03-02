@@ -55,7 +55,12 @@ Plans:
   2. Running the image against a bare RN repo produces a pre-upgrade audit report of native modules against New Architecture compatibility before any package version is changed
   3. Running the image against a bare RN repo with `TARGET_RN=0.77` produces a branch where `react-native upgrade` has run, Gradle and AGP versions match the target release, and `./gradlew assembleDebug` exits 0 (when `ANDROID_BUILD=true`)
   4. `verify-fast.sh` for RN includes a `./gradlew --version` check that catches Gradle/AGP version mismatch
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Dockerfile (Ubuntu 22.04 + JDK 17 + Android SDK 36) + entrypoint.sh + kickoff-prompt.txt + shared templates
+- [ ] 03-02-PLAN.md — Scripts: verify-fast.sh (Gradle/AGP check + iOS), verify-full.sh (assembleDebug), recon.sh, ralph-loop.sh, stream-pretty.sh
+- [ ] 03-03-PLAN.md — Templates: CLAUDE.md (agent instructions), plan.md (6-phase upgrade plan), checklist.yaml
 
 ### Phase 4: CLI Registry and CI Matrix
 **Goal**: All four new stacks are discoverable and launchable via the `stack-upgrade` CLI, and the CI pipeline builds and publishes both new Docker images on every release
@@ -75,5 +80,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Shared Node Image Foundation | 3/3 | Complete    | 2026-03-01 |
 | 2. Web JS Agent Templates | 0/3 | Not started | - |
-| 3. React Native Image and Templates | 0/TBD | Not started | - |
+| 3. React Native Image and Templates | 0/3 | Not started | - |
 | 4. CLI Registry and CI Matrix | 0/TBD | Not started | - |
