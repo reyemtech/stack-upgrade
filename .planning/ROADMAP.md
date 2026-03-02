@@ -6,7 +6,7 @@ Four upgrade agent stacks (Next.js, CRA→Vite, Vite+React, React Native) are ad
 
 ## Phases
 
-- [ ] **Phase 1: Shared Node Image Foundation** - Dockerfile, entrypoint with auto-detection, and shared scripts for all web JS stacks
+- [x] **Phase 1: Shared Node Image Foundation** - Dockerfile, entrypoint with auto-detection, and shared scripts for all web JS stacks (completed 2026-03-01)
 - [ ] **Phase 2: Web JS Agent Templates** - Next.js, CRA, and Vite+React template sets (CLAUDE.md, plan.md, checklist.yaml per stack)
 - [ ] **Phase 3: React Native Image and Templates** - Separate heavy image with Android SDK and RN-specific scripts and templates
 - [ ] **Phase 4: CLI Registry and CI Matrix** - Wire all four stacks into CLI detection and CI multi-arch builds
@@ -39,7 +39,12 @@ Plans:
   2. Running the node image against a CRA repo produces a branch where `react-scripts` is removed, `vite.config.ts` exists, `REACT_APP_*` references are rewritten to `VITE_*`, and `vite build` exits 0
   3. Running the node image against a Vite+React repo produces a branch where React and Vite are bumped to target major versions and `vite build` exits 0
   4. Post-build grep checks (`verify-fast.sh`) catch known silent-failure markers (codemod markers, leftover `process.env.REACT_APP_` in `dist/`) and exit non-zero when found
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Next.js templates (CLAUDE.md, plan.md, checklist.yaml) + entrypoint.sh URL fix
+- [ ] 02-02-PLAN.md — CRA templates (CLAUDE.md, plan.md, checklist.yaml)
+- [ ] 02-03-PLAN.md — Vite+React templates (CLAUDE.md, plan.md, checklist.yaml)
 
 ### Phase 3: React Native Image and Templates
 **Goal**: A runnable `stacks/react-native/` Docker image exists with JDK 17 and Android SDK that can perform a bare React Native major version upgrade, audit New Architecture library compatibility before any version bump, and verify the Android build succeeds
@@ -68,7 +73,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Shared Node Image Foundation | 0/3 | Planning complete | - |
-| 2. Web JS Agent Templates | 0/TBD | Not started | - |
+| 1. Shared Node Image Foundation | 3/3 | Complete    | 2026-03-01 |
+| 2. Web JS Agent Templates | 0/3 | Not started | - |
 | 3. React Native Image and Templates | 0/TBD | Not started | - |
 | 4. CLI Registry and CI Matrix | 0/TBD | Not started | - |
