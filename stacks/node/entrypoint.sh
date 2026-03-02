@@ -137,10 +137,17 @@ chmod +x .upgrade/scripts/verify-*.sh
 echo "Fetching upgrade guide..."
 case "$STACK_TYPE" in
   nextjs)
-    curl -fsSL "https://nextjs.org/docs/app/building-your-application/upgrading" \
-      -o .upgrade/nextjs-upgrade-guide.html 2>/dev/null \
-      && echo "Next.js upgrade guide saved to .upgrade/nextjs-upgrade-guide.html" \
-      || echo "WARNING: Could not fetch upgrade guide (non-fatal)."
+    if [ -n "$TARGET_NEXTJS" ]; then
+      curl -fsSL "https://nextjs.org/docs/app/guides/upgrading/version-${TARGET_NEXTJS}" \
+        -o .upgrade/nextjs-upgrade-guide.html 2>/dev/null \
+        && echo "Next.js ${TARGET_NEXTJS} upgrade guide saved" \
+        || echo "WARNING: Could not fetch version-specific guide (non-fatal)."
+    else
+      curl -fsSL "https://nextjs.org/docs/app/building-your-application/upgrading" \
+        -o .upgrade/nextjs-upgrade-guide.html 2>/dev/null \
+        && echo "Next.js upgrade guide saved" \
+        || echo "WARNING: Could not fetch upgrade guide (non-fatal)."
+    fi
     ;;
   cra)
     curl -fsSL "https://vitejs.dev/guide/migration" \
