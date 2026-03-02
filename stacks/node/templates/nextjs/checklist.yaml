@@ -1,3 +1,67 @@
-# Next.js Upgrade Checklist
-# Phase 2 will populate with real phases
-phases: []
+# Next.js ${TARGET_NEXTJS} Upgrade Checklist
+# Generated: ${UPGRADE_DATE}
+
+phases:
+  - id: 1
+    name: Codemod
+    status: not_started
+    description: Run @next/codemod upgrade ${TARGET_NEXTJS} and commit codemod output separately
+    acceptance:
+      - "@next/codemod upgrade completed and committed in its own commit"
+      - "codemod commit contains no manual fixes — only automated transforms"
+      - "verify-fast.sh runs (may have UnsafeUnwrapped failures — acceptable at this stage)"
+
+  - id: 2
+    name: Async Request API Migration
+    status: not_started
+    description: Resolve all UnsafeUnwrapped markers and @next/codemod comment markers left by codemod
+    acceptance:
+      - "grep -r UnsafeUnwrapped src/ app/ pages/ returns no results"
+      - "grep -r @next/codemod src/ app/ pages/ returns no results"
+      - "verify-fast.sh passes with exit code 0"
+
+  - id: 3
+    name: Middleware / Proxy Migration
+    status: not_started
+    description: Handle middleware.ts to proxy.ts rename for Next.js 16+ and verify Edge runtime config
+    acceptance:
+      - "middleware/proxy file matches target version convention (middleware.ts for Edge, proxy.ts for Node)"
+      - "next build passes with no type errors in middleware/proxy"
+      - "curl smoke test against protected routes confirms auth/redirect behaviour (or limitation documented in run-log.md)"
+
+  - id: 4
+    name: Turbopack Configuration
+    status: not_started
+    description: Migrate experimental.turbopack to top-level turbopack key; handle webpack config
+    acceptance:
+      - "no experimental.turbopack key in next.config.* (moved to top-level turbopack or removed)"
+      - "build passes with default bundler (Turbopack) or --webpack flag added if webpack config retained"
+      - "verify-fast.sh passes"
+
+  - id: 5
+    name: Cache Semantics Audit
+    status: not_started
+    description: Audit fetch() calls for implicit caching reliance changed in Next.js 15
+    acceptance:
+      - "no fetch() calls with implicit caching (all audited — explicit cache option added or documented as intentional no-store)"
+      - "route segment configs reviewed and updated if needed"
+      - "verify-fast.sh passes"
+
+  - id: 6
+    name: Build Verify + Grep Checks
+    status: not_started
+    description: Full verification pass — clean build, zero codemod markers, no lint/tsc errors
+    acceptance:
+      - "verify-full.sh passes clean with exit code 0"
+      - "next build completes without warnings about deprecated config keys"
+      - "npx tsc --noEmit passes"
+      - "lint passes (biome check or eslint --max-warnings=0)"
+
+  - id: 7
+    name: Dependency Cleanup
+    status: not_started
+    description: Update react, react-dom, type packages, eslint-config-next; remove unused packages
+    acceptance:
+      - "no outdated major dependencies (react, react-dom, @types/react, @types/node, eslint-config-next)"
+      - "unused packages removed and removals logged in run-log.md"
+      - "verify-full.sh passes"
