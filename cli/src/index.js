@@ -3,7 +3,7 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { getGhToken, getGhUser, discoverRepos, selectRepos } from './github.js';
-import { detectClaudeCredentials } from './credentials.js';
+import { detectClaudeCredentials, detectCodexCredentials } from './credentials.js';
 import { askRunTarget, askTargetVersion, askPush, askSuffix } from './prompts.js';
 import { hasDocker, launchDocker } from './docker.js';
 import { hasKubectl, launchKubernetes } from './kubectl.js';
@@ -20,7 +20,6 @@ async function main() {
   let ghToken = getGhToken();
   if (!ghToken) ghToken = getConfig('ghToken') || null;
   const ghUser = ghToken ? getGhUser() : null;
-  const claudeAutoDetect = await detectClaudeCredentials({ promptIfMissing: false });
 
   if (ghUser) {
     p.log.message(`${pc.green('\u2713')} GitHub CLI authenticated (${ghUser})`);
@@ -30,13 +29,34 @@ async function main() {
 
   preSpinner.stop('Prerequisites checked');
 
-  // Claude credentials — prompt after spinner if not auto-detected
-  let claudeCreds;
-  if (claudeAutoDetect) {
-    p.log.message(`${pc.green('\u2713')} Claude credentials found (${claudeAutoDetect.source})`);
-    claudeCreds = claudeAutoDetect;
+  // --- Agent selection ---
+  const agentChoice = await p.select({
+    message: 'Which AI agent?',
+    options: [
+      { value: 'claude', label: 'Claude Code', hint: 'Anthropic' },
+      { value: 'codex', label: 'Codex CLI', hint: 'OpenAI' },
+    ],
+  });
+  if (p.isCancel(agentChoice)) process.exit(0);
+
+  // Detect credentials for the selected agent
+  let agentCreds;
+  if (agentChoice === 'claude') {
+    const autoDetect = await detectClaudeCredentials({ promptIfMissing: false });
+    if (autoDetect) {
+      p.log.message(`${pc.green('\u2713')} Claude credentials found (${autoDetect.source})`);
+      agentCreds = autoDetect;
+    } else {
+      agentCreds = await detectClaudeCredentials({ promptIfMissing: true });
+    }
   } else {
-    claudeCreds = await detectClaudeCredentials({ promptIfMissing: true });
+    const autoDetect = await detectCodexCredentials({ promptIfMissing: false });
+    if (autoDetect) {
+      p.log.message(`${pc.green('\u2713')} Codex credentials found (${autoDetect.source})`);
+      agentCreds = autoDetect;
+    } else {
+      agentCreds = await detectCodexCredentials({ promptIfMissing: true });
+    }
   }
 
   // Save GH token if we got one from `gh auth`
@@ -104,8 +124,9 @@ async function main() {
       push,
       suffix: suffix || '',
       ghToken,
-      claudeCreds,
-      image: stack.image,
+      agentCreds,
+      agentChoice,
+      image: stack.image(agentChoice),
       stack: repo.stack,
       stackName: stack.name,
       envKey: stack.envKey,
