@@ -127,5 +127,93 @@ echo "" >> "$REPORT"
 [ -f phpunit.xml ] && echo "- phpunit.xml exists" >> "$REPORT"
 [ -f phpunit.xml.dist ] && echo "- phpunit.xml.dist exists" >> "$REPORT"
 
+echo "" >> "$REPORT"
+
+# Quality tools detection
+echo "## Quality Tools" >> "$REPORT"
+echo "" >> "$REPORT"
+echo "| Tool | Detected | Config |" >> "$REPORT"
+echo "|------|----------|--------|" >> "$REPORT"
+
+# Pint
+PINT_DETECTED="No"
+PINT_CONFIG="—"
+if [ -f pint.json ]; then
+  PINT_DETECTED="Yes"; PINT_CONFIG="pint.json"
+elif composer show laravel/pint >/dev/null 2>&1; then
+  PINT_DETECTED="Yes"; PINT_CONFIG="(composer package)"
+fi
+echo "| Pint | $PINT_DETECTED | $PINT_CONFIG |" >> "$REPORT"
+
+# PHPStan / Larastan
+PHPSTAN_DETECTED="No"
+PHPSTAN_CONFIG="—"
+if [ -f phpstan.neon ]; then
+  PHPSTAN_DETECTED="Yes"; PHPSTAN_CONFIG="phpstan.neon"
+elif [ -f phpstan.neon.dist ]; then
+  PHPSTAN_DETECTED="Yes"; PHPSTAN_CONFIG="phpstan.neon.dist"
+elif composer show nunomaduro/larastan >/dev/null 2>&1 || composer show phpstan/phpstan >/dev/null 2>&1; then
+  PHPSTAN_DETECTED="Yes"; PHPSTAN_CONFIG="(composer package)"
+fi
+echo "| PHPStan | $PHPSTAN_DETECTED | $PHPSTAN_CONFIG |" >> "$REPORT"
+
+# PHP CS Fixer
+CSFIXER_DETECTED="No"
+CSFIXER_CONFIG="—"
+if [ -f .php-cs-fixer.php ]; then
+  CSFIXER_DETECTED="Yes"; CSFIXER_CONFIG=".php-cs-fixer.php"
+elif [ -f .php-cs-fixer.dist.php ]; then
+  CSFIXER_DETECTED="Yes"; CSFIXER_CONFIG=".php-cs-fixer.dist.php"
+fi
+echo "| PHP CS Fixer | $CSFIXER_DETECTED | $CSFIXER_CONFIG |" >> "$REPORT"
+
+# ESLint
+ESLINT_DETECTED="No"
+ESLINT_CONFIG="—"
+for f in .eslintrc .eslintrc.js .eslintrc.json .eslintrc.yml .eslintrc.yaml eslint.config.js eslint.config.mjs eslint.config.ts; do
+  if [ -f "$f" ]; then
+    ESLINT_DETECTED="Yes"; ESLINT_CONFIG="$f"; break
+  fi
+done
+if [ "$ESLINT_DETECTED" = "No" ] && [ -f package.json ] && jq -e '.devDependencies.eslint // .dependencies.eslint' package.json >/dev/null 2>&1; then
+  ESLINT_DETECTED="Yes"; ESLINT_CONFIG="(package.json)"
+fi
+echo "| ESLint | $ESLINT_DETECTED | $ESLINT_CONFIG |" >> "$REPORT"
+
+# Prettier
+PRETTIER_DETECTED="No"
+PRETTIER_CONFIG="—"
+for f in .prettierrc .prettierrc.js .prettierrc.json .prettierrc.yml .prettierrc.yaml .prettierrc.toml prettier.config.js prettier.config.mjs; do
+  if [ -f "$f" ]; then
+    PRETTIER_DETECTED="Yes"; PRETTIER_CONFIG="$f"; break
+  fi
+done
+if [ "$PRETTIER_DETECTED" = "No" ] && [ -f package.json ] && jq -e '.devDependencies.prettier // .dependencies.prettier' package.json >/dev/null 2>&1; then
+  PRETTIER_DETECTED="Yes"; PRETTIER_CONFIG="(package.json)"
+fi
+echo "| Prettier | $PRETTIER_DETECTED | $PRETTIER_CONFIG |" >> "$REPORT"
+
+# Cypress
+CYPRESS_DETECTED="No"
+CYPRESS_CONFIG="—"
+if [ -f cypress.config.ts ]; then
+  CYPRESS_DETECTED="Yes"; CYPRESS_CONFIG="cypress.config.ts"
+elif [ -f cypress.config.js ]; then
+  CYPRESS_DETECTED="Yes"; CYPRESS_CONFIG="cypress.config.js"
+elif [ -d cypress ]; then
+  CYPRESS_DETECTED="Yes"; CYPRESS_CONFIG="cypress/"
+fi
+echo "| Cypress | $CYPRESS_DETECTED | $CYPRESS_CONFIG |" >> "$REPORT"
+
+# Playwright
+PLAYWRIGHT_DETECTED="No"
+PLAYWRIGHT_CONFIG="—"
+if [ -f playwright.config.ts ]; then
+  PLAYWRIGHT_DETECTED="Yes"; PLAYWRIGHT_CONFIG="playwright.config.ts"
+elif [ -f playwright.config.js ]; then
+  PLAYWRIGHT_DETECTED="Yes"; PLAYWRIGHT_CONFIG="playwright.config.js"
+fi
+echo "| Playwright | $PLAYWRIGHT_DETECTED | $PLAYWRIGHT_CONFIG |" >> "$REPORT"
+
 echo ""
 echo "Recon complete. Report saved to $REPORT"

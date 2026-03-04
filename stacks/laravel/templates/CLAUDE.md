@@ -44,6 +44,11 @@ Every time you start (including restarts):
   - Notes about config changes, breaking changes fixed, etc.
   - A Phase Summary entry with status and one-line description
 - The phase commit MUST include the updated changelog. Verify the changelog reflects the phase before committing.
+- In the **final phase**, add a "Quality Tools" section to changelog.md showing before/after status:
+  | Tool | Before | After | Notes |
+  |------|--------|-------|-------|
+  | Pint | Pass | Pass | Auto-fixed after each phase |
+  | PHPStan | 12 errors | 8 errors | Fixed 4 upgrade-related errors |
 
 ### Constraints
 - **Upgrade everything to latest** — the goal is eliminating tech debt and security risks. If a major version upgrade requires code changes (namespace migrations, API changes, config updates), DO those changes. This is expected.
@@ -86,10 +91,25 @@ This phase is optional — if the current constraint already covers the containe
 - `.upgrade/laravel-upgrade-guide.html` — the official Laravel upgrade guide for the target version (if available). **Read this during Phase 1** for breaking changes and required migration steps.
 - `.upgrade/recon-report.md` — pre-analyzed repo overview: package usage, component counts, test suite shape
 
+## Baseline Awareness
+
+Before the upgrade started, quality tools were run and results saved to `.upgrade/baseline/`:
+- `pint.status` / `pint.log` — code style baseline
+- `phpstan.status` / `phpstan.json` — static analysis baseline
+- `eslint.status` / `eslint.log` — JS linting baseline
+- `cypress.status` — e2e test presence
+
+**Rules:**
+- If a tool was PASSING before the upgrade (`pass` in .status file), it MUST still pass after. Fix any regressions you introduce.
+- If a tool was FAILING before the upgrade (`fail` in .status file), you are NOT required to fix pre-existing failures. But if you can fix them easily as part of the upgrade, do so.
+- Pint runs automatically in auto-fix mode via verify-fast.sh after every change. Include any Pint-reformatted files in your phase commit.
+- If PHPStan/Larastan is installed: run `./vendor/bin/phpstan analyse` and fix errors that you introduced. Ignore pre-existing errors (compare with baseline).
+- Log any baseline comparison notes in `.upgrade/run-log.md`
+
 ## Verification Scripts
 
-- `.upgrade/scripts/verify-fast.sh` — composer validate + route:list + tests (run frequently)
-- `.upgrade/scripts/verify-full.sh` — above + migrate:fresh + npm build + audits (run before phase completion)
+- `.upgrade/scripts/verify-fast.sh` — composer validate + route:list + tests + pint auto-fix + phpstan (run frequently)
+- `.upgrade/scripts/verify-full.sh` — above + migrate:fresh + npm build + audits + eslint (run before phase completion)
 
 ## Useful Commands
 
