@@ -123,7 +123,7 @@ async function selectNamespace() {
 /**
  * Ensure the upgrade-agent secret exists in the namespace.
  */
-function ensureSecret(namespace, ghToken, claudeCreds) {
+function ensureSecret(namespace, ghToken, agentCreds, agentChoice) {
   try {
     execFileSync('kubectl', ['delete', 'secret', SECRET_NAME, '-n', namespace], { stdio: 'ignore' });
   } catch {
@@ -141,14 +141,22 @@ function ensureSecret(namespace, ghToken, claudeCreds) {
     args.push(`--from-literal=GH_TOKEN=${ghToken}`);
   }
 
-  if (claudeCreds.type === 'oauth') {
-    args.push(`--from-literal=CLAUDE_CODE_OAUTH_TOKEN=${claudeCreds.value}`);
-  } else {
-    args.push(`--from-literal=ANTHROPIC_API_KEY=${claudeCreds.value}`);
+  if (agentChoice === 'claude') {
+    if (agentCreds.type === 'oauth') {
+      args.push(`--from-literal=CLAUDE_CODE_OAUTH_TOKEN=${agentCreds.value}`);
+    } else {
+      args.push(`--from-literal=ANTHROPIC_API_KEY=${agentCreds.value}`);
+    }
+  } else if (agentChoice === 'codex') {
+    if (agentCreds.type === 'apikey') {
+      args.push(`--from-literal=OPENAI_API_KEY=${agentCreds.value}`);
+    } else {
+      args.push(`--from-literal=CODEX_AUTH_JSON_B64=${agentCreds.value}`);
+    }
   }
 
   execFileSync('kubectl', args, { stdio: 'ignore' });
-  p.log.success(`Secret created (Claude: ${claudeCreds.type}, GitHub: ${ghToken ? 'yes' : 'no'})`);
+  p.log.success(`Secret created (${agentChoice}: ${agentCreds.type}, GitHub: ${ghToken ? 'yes' : 'no'})`);
 }
 
 /**
@@ -166,7 +174,7 @@ function startPod({ namespace, repoUrl, targetVersion, push, suffix, ghToken, cl
   if (suffix) envVars.push({ name: 'BRANCH_SUFFIX', value: suffix });
 
   // Secret-backed env vars
-  const secretEnvs = ['GH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY'];
+  const secretEnvs = ['GH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'CODEX_AUTH_JSON_B64'];
   for (const key of secretEnvs) {
     envVars.push({
       name: key,
@@ -211,8 +219,8 @@ export async function launchKubernetes(upgrades) {
   const namespace = await selectNamespace();
 
   // Ensure secret (uses first upgrade's creds — they're shared)
-  const { ghToken, claudeCreds } = upgrades[0];
-  ensureSecret(namespace, ghToken, claudeCreds);
+  const { ghToken, agentCreds, agentChoice } = upgrades[0];
+  ensureSecret(namespace, ghToken, agentCreds, agentChoice);
 
   // Launch all pods
   const launched = [];

@@ -1,0 +1,20 @@
+FROM base
+
+RUN npm install -g @anthropic-ai/claude-code
+
+RUN useradd -m -s /bin/bash agent \
+    && mkdir -p /workspace /output /skill \
+    && chown -R agent:agent /workspace /output
+
+COPY --chown=agent:agent templates/ /skill/templates/
+COPY --chown=agent:agent scripts/ /skill/scripts/
+COPY --chown=agent:agent kickoff-prompt.txt /skill/kickoff-prompt.txt
+COPY --chown=agent:agent entrypoint.sh /skill/entrypoint.sh
+RUN chmod +x /skill/entrypoint.sh /skill/scripts/*.sh
+
+ENV AGENT_CLI=claude
+VOLUME /output
+WORKDIR /workspace
+USER agent
+
+ENTRYPOINT ["/skill/entrypoint.sh"]

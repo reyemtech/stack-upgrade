@@ -67,7 +67,7 @@ jobs:
           npm pkg fix
           npm publish --access public --provenance
 
-  # Build each platform natively per stack (no QEMU emulation)
+  # Build each platform natively per stack × agent (no QEMU emulation)
   build:
     needs: [release]
     if: |
@@ -80,6 +80,7 @@ jobs:
       fail-fast: true
       matrix:
         stack: [laravel]
+        agent: [claude, codex]
         platform: [linux/amd64, linux/arm64]
         include:
           - platform: linux/amd64
@@ -101,15 +102,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push by digest
+      - name: Build base image
+        uses: docker/build-push-action@v6
+        with:
+          context: stacks/${{ matrix.stack }}
+          file: stacks/${{ matrix.stack }}/Dockerfile.base
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: base:local
+          cache-from: type=gha,scope=${{ matrix.stack }}-base-${{ matrix.platform }}
+          cache-to: type=gha,scope=${{ matrix.stack }}-base-${{ matrix.platform }},mode=max
+
+      - name: Build and push agent image by digest
         id: build
         uses: docker/build-push-action@v6
         with:
           context: stacks/${{ matrix.stack }}
+          file: stacks/${{ matrix.stack }}/Dockerfile.${{ matrix.agent }}
           platforms: ${{ matrix.platform }}
-          outputs: type=image,name=${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent,push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.stack }}-${{ matrix.platform }}
-          cache-to: type=gha,scope=${{ matrix.stack }}-${{ matrix.platform }},mode=max
+          build-contexts: base=docker-image://base:local
+          outputs: type=image,name=${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent-${{ matrix.agent }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.stack }}-${{ matrix.agent }}-${{ matrix.platform }}
+          cache-to: type=gha,scope=${{ matrix.stack }}-${{ matrix.agent }}-${{ matrix.platform }},mode=max
 
       - name: Export digest
         run: |
@@ -120,12 +134,12 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ matrix.stack }}-${{ matrix.runner }}
+          name: digests-${{ matrix.stack }}-${{ matrix.agent }}-${{ matrix.runner }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
-  # Merge per-platform images into a single multi-arch manifest per stack
+  # Merge per-platform images into a single multi-arch manifest per stack × agent
   publish:
     needs: [release, build]
     runs-on: ubuntu-latest
@@ -135,6 +149,7 @@ jobs:
     strategy:
       matrix:
         stack: [laravel]
+        agent: [claude, codex]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -165,7 +180,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent
+          images: ${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent-${{ matrix.agent }}
           tags: |
             type=raw,value=latest
             type=semver,pattern={{version}},value=${{ steps.version.outputs.tag }}
@@ -177,7 +192,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
-          pattern: digests-${{ matrix.stack }}-*
+          pattern: digests-${{ matrix.stack }}-${{ matrix.agent }}-*
           merge-multiple: true
 
       - name: Create manifest list and push
@@ -185,8 +200,8 @@ jobs:
         run: |
           docker buildx imagetools create \
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent@sha256:%s ' *)
+            $(printf '${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent-${{ matrix.agent }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent-${{ matrix.agent }}:${{ steps.meta.outputs.version }}

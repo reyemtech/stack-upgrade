@@ -5,9 +5,29 @@ set -e
 : "${REPO_URL:?REPO_URL is required}"
 : "${TARGET_LARAVEL:?TARGET_LARAVEL is required}"
 
-# Auth: support both Anthropic API key and Claude Max OAuth token
-if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
-  echo "ERROR: Set either ANTHROPIC_API_KEY (API key) or CLAUDE_CODE_OAUTH_TOKEN (Claude Max via 'claude setup-token')"
+# Agent CLI selection (baked into image via ENV, can be overridden)
+AGENT_CLI="${AGENT_CLI:-claude}"
+
+# Auth: validate credentials for the selected agent
+if [ "$AGENT_CLI" = "claude" ]; then
+  if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+    echo "ERROR: Set ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN"
+    exit 1
+  fi
+elif [ "$AGENT_CLI" = "codex" ]; then
+  if [ -z "$OPENAI_API_KEY" ] && [ -z "$CODEX_AUTH_JSON_B64" ]; then
+    echo "ERROR: Set OPENAI_API_KEY or CODEX_AUTH_JSON_B64"
+    exit 1
+  fi
+  # Setup Codex auth
+  if [ -n "$OPENAI_API_KEY" ]; then
+    printenv OPENAI_API_KEY | codex login --with-api-key
+  elif [ -n "$CODEX_AUTH_JSON_B64" ]; then
+    mkdir -p ~/.codex
+    echo "$CODEX_AUTH_JSON_B64" | base64 -d > ~/.codex/auth.json
+  fi
+else
+  echo "ERROR: Unknown AGENT_CLI: $AGENT_CLI (expected 'claude' or 'codex')"
   exit 1
 fi
 
@@ -146,5 +166,5 @@ grep -qxF '.env' .gitignore 2>/dev/null || echo '.env' >> .gitignore
 grep -qxF 'database/database.sqlite' .gitignore 2>/dev/null || echo 'database/database.sqlite' >> .gitignore
 
 # No scaffold commit — agent commits once per phase
-echo "Starting Claude Code via Ralph loop..."
+echo "Starting $AGENT_CLI via Ralph loop..."
 exec /skill/scripts/ralph-loop.sh

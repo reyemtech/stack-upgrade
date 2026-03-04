@@ -1,5 +1,6 @@
 #!/bin/bash
-# Ralph loop: restart Claude Code if it exits before checklist is done
+# Ralph loop: restart the agent if it exits before checklist is done
+AGENT_CLI="${AGENT_CLI:-claude}"
 MAX_RESTARTS=${MAX_RESTARTS:-5}
 MAX_TURNS=${MAX_TURNS:-200}
 RESTARTS=0
@@ -29,20 +30,27 @@ while [ $RESTARTS -lt $MAX_RESTARTS ]; do
   CURRENT_PHASE=$(grep -B1 "status: in_progress\|status: not_started" /workspace/.upgrade/checklist.yaml 2>/dev/null | grep "id:" | head -1 | awk '{print $3}' || echo "unknown")
   write_status "$CURRENT_PHASE" "in_progress"
 
-  echo "$(date -u +%Y-%m-%dT%H:%M) ralph: launching Claude Code (attempt $((RESTARTS + 1))/$((MAX_RESTARTS + 1)))"
+  PROMPT="$(cat /skill/kickoff-prompt.txt)"
+  echo "$(date -u +%Y-%m-%dT%H:%M) ralph: launching $AGENT_CLI (attempt $((RESTARTS + 1))/$((MAX_RESTARTS + 1)))"
 
-  claude --dangerously-skip-permissions \
-    --verbose \
-    --max-turns "$MAX_TURNS" \
-    --output-format stream-json \
-    -p "$(cat /skill/kickoff-prompt.txt)" \
-    2>&1 | tee /output/claude-run-$((RESTARTS + 1)).jsonl | /skill/scripts/stream-pretty.sh \
-    || true
+  if [ "$AGENT_CLI" = "claude" ]; then
+    claude --dangerously-skip-permissions \
+      --verbose \
+      --max-turns "$MAX_TURNS" \
+      --output-format stream-json \
+      -p "$PROMPT" \
+      2>&1 | tee /output/agent-run-$((RESTARTS + 1)).jsonl | /skill/scripts/stream-pretty.sh \
+      || true
+  elif [ "$AGENT_CLI" = "codex" ]; then
+    codex exec --full-auto --json "$PROMPT" \
+      2>&1 | tee /output/agent-run-$((RESTARTS + 1)).jsonl | /skill/scripts/stream-pretty.sh \
+      || true
+  fi
 
   # Check if checklist has incomplete tasks
   if grep -q "status: not_started\|status: in_progress" /workspace/.upgrade/checklist.yaml 2>/dev/null; then
     RESTARTS=$((RESTARTS + 1))
-    echo "$(date -u +%Y-%m-%dT%H:%M) restart: Claude exited with incomplete tasks. Restart $RESTARTS/$MAX_RESTARTS" >> /workspace/.upgrade/run-log.md
+    echo "$(date -u +%Y-%m-%dT%H:%M) restart: $AGENT_CLI exited with incomplete tasks. Restart $RESTARTS/$MAX_RESTARTS" >> /workspace/.upgrade/run-log.md
     echo "Restarting... ($RESTARTS/$MAX_RESTARTS)"
     write_status "$CURRENT_PHASE" "restarting"
   else

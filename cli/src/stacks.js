@@ -1,7 +1,7 @@
 export const STACKS = {
   laravel: {
     name: 'Laravel',
-    image: 'ghcr.io/reyemtech/laravel-upgrade-agent:latest',
+    image: (agent) => `ghcr.io/reyemtech/laravel-upgrade-agent-${agent}:latest`,
     detect: (composer) => composer?.require?.['laravel/framework'],
     versionLabel: 'Target Laravel version',
     branchPrefix: 'upgrade/laravel',

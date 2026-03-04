@@ -35,7 +35,7 @@ function pullImage(image) {
  * Launch a single Docker container for an upgrade.
  * @returns {{ containerName: string, outputDir: string }}
  */
-function startContainer({ repoUrl, targetVersion, push, suffix, ghToken, claudeCreds, image, stack, envKey }) {
+function startContainer({ repoUrl, targetVersion, push, suffix, ghToken, agentCreds, agentChoice, image, stack, envKey }) {
   const containerName = deriveName(repoUrl, stack, targetVersion, suffix);
   const repoShort = repoUrl.replace(/.*[:/]/, '').replace(/\.git$/, '');
   const outputDir = resolve(process.cwd(), 'output', repoShort);
@@ -51,10 +51,18 @@ function startContainer({ repoUrl, targetVersion, push, suffix, ghToken, claudeC
 
   if (suffix) env.BRANCH_SUFFIX = suffix;
 
-  if (claudeCreds.type === 'oauth') {
-    env.CLAUDE_CODE_OAUTH_TOKEN = claudeCreds.value;
-  } else {
-    env.ANTHROPIC_API_KEY = claudeCreds.value;
+  if (agentChoice === 'claude') {
+    if (agentCreds.type === 'oauth') {
+      env.CLAUDE_CODE_OAUTH_TOKEN = agentCreds.value;
+    } else {
+      env.ANTHROPIC_API_KEY = agentCreds.value;
+    }
+  } else if (agentChoice === 'codex') {
+    if (agentCreds.type === 'apikey') {
+      env.OPENAI_API_KEY = agentCreds.value;
+    } else {
+      env.CODEX_AUTH_JSON_B64 = agentCreds.value;
+    }
   }
 
   for (const [key, val] of Object.entries(env)) {
