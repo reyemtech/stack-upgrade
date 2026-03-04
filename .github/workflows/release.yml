@@ -102,14 +102,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build base image
+      - name: Build and push base image
         uses: docker/build-push-action@v6
         with:
           context: stacks/${{ matrix.stack }}
           file: stacks/${{ matrix.stack }}/Dockerfile.base
           platforms: ${{ matrix.platform }}
-          load: true
-          tags: base:local
+          push: true
+          tags: ${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-base:buildcache
           cache-from: type=gha,scope=${{ matrix.stack }}-base-${{ matrix.platform }}
           cache-to: type=gha,scope=${{ matrix.stack }}-base-${{ matrix.platform }},mode=max
 
@@ -120,7 +120,7 @@ jobs:
           context: stacks/${{ matrix.stack }}
           file: stacks/${{ matrix.stack }}/Dockerfile.${{ matrix.agent }}
           platforms: ${{ matrix.platform }}
-          build-contexts: base=docker-image://base:local
+          build-contexts: base=docker-image://${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-base:buildcache
           outputs: type=image,name=${{ env.REGISTRY }}/reyemtech/${{ matrix.stack }}-upgrade-agent-${{ matrix.agent }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ matrix.stack }}-${{ matrix.agent }}-${{ matrix.platform }}
           cache-to: type=gha,scope=${{ matrix.stack }}-${{ matrix.agent }}-${{ matrix.platform }},mode=max
