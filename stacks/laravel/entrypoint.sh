@@ -77,6 +77,41 @@ php artisan --version > /output/before-versions.txt 2>/dev/null || echo "unknown
 echo "Running baseline verification..."
 /skill/scripts/verify-full.sh 2>&1 | tee /output/baseline.log || echo "WARNING: Baseline verification had failures (expected pre-upgrade)."
 
+# Capture quality tool baselines (non-fatal)
+echo "Capturing quality tool baselines..."
+mkdir -p /output/baseline
+
+# Pint
+if [ -f pint.json ] || composer show laravel/pint >/dev/null 2>&1; then
+  if [ -f vendor/bin/pint ]; then
+    ./vendor/bin/pint --test > /output/baseline/pint.log 2>&1 && echo "pass" > /output/baseline/pint.status || echo "fail" > /output/baseline/pint.status
+  fi
+fi
+
+# PHPStan
+if [ -f phpstan.neon ] || [ -f phpstan.neon.dist ]; then
+  if [ -f vendor/bin/phpstan ]; then
+    php -d memory_limit=512M ./vendor/bin/phpstan analyse --no-progress --error-format=json > /output/baseline/phpstan.json 2>&1 && echo "pass" > /output/baseline/phpstan.status || echo "fail" > /output/baseline/phpstan.status
+  fi
+fi
+
+# ESLint
+if npx eslint --version >/dev/null 2>&1; then
+  npx eslint . > /output/baseline/eslint.log 2>&1 && echo "pass" > /output/baseline/eslint.status || echo "fail" > /output/baseline/eslint.status
+fi
+
+# Cypress (dry-run only — verify config parses)
+if [ -f cypress.config.ts ] || [ -f cypress.config.js ]; then
+  echo "detected" > /output/baseline/cypress.status
+fi
+
+# Playwright (detect only)
+if [ -f playwright.config.ts ] || [ -f playwright.config.js ]; then
+  echo "detected" > /output/baseline/playwright.status
+fi
+
+echo "Quality baselines captured to /output/baseline/"
+
 # Create .upgrade/ directory for all upgrade artifacts
 mkdir -p .upgrade/scripts
 
@@ -90,6 +125,9 @@ cp /skill/templates/CLAUDE.md .upgrade/CLAUDE.md
 cp /skill/scripts/verify-fast.sh .upgrade/scripts/verify-fast.sh
 cp /skill/scripts/verify-full.sh .upgrade/scripts/verify-full.sh
 chmod +x .upgrade/scripts/verify-*.sh
+
+# Copy quality baselines into .upgrade/ so the agent can read them
+cp -r /output/baseline .upgrade/baseline 2>/dev/null || true
 
 # Fetch the official Laravel upgrade guide
 echo "Fetching Laravel upgrade guide..."
