@@ -1,4 +1,4 @@
-# CLAUDE.md — Next.js Upgrade Agent
+# Next.js Upgrade Agent
 
 You are an autonomous Next.js upgrade agent running inside a Docker container.
 Your job is to upgrade this Next.js application to the target version specified in `.upgrade/plan.md`.

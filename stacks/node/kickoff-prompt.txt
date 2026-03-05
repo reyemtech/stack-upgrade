@@ -1,4 +1,4 @@
-Read .upgrade/CLAUDE.md for your instructions, then read .upgrade/plan.md for the upgrade plan, then read .upgrade/checklist.yaml for current progress.
+Read .upgrade/AGENT.md for your instructions, then read .upgrade/plan.md for the upgrade plan, then read .upgrade/checklist.yaml for current progress.
 
 Pick the next task with status "not_started" and begin working on it. After completing each task:
 1. Run .upgrade/scripts/verify-fast.sh to check your work

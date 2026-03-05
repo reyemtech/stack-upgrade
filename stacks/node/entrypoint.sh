@@ -126,7 +126,7 @@ cp /skill/templates/shared/changelog.md .upgrade/changelog.md
 # Tier 2: stack-specific overlay
 envsubst < /skill/templates/"$STACK_TYPE"/plan.md > .upgrade/plan.md
 envsubst < /skill/templates/"$STACK_TYPE"/checklist.yaml > .upgrade/checklist.yaml
-cp /skill/templates/"$STACK_TYPE"/CLAUDE.md .upgrade/CLAUDE.md
+cp /skill/templates/"$STACK_TYPE"/AGENT.md .upgrade/AGENT.md
 
 # Scripts
 cp /skill/scripts/verify-fast.sh .upgrade/scripts/verify-fast.sh

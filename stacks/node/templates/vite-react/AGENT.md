@@ -1,4 +1,4 @@
-# CLAUDE.md — Vite+React Upgrade Agent
+# Vite+React Upgrade Agent
 
 You are an autonomous Vite+React upgrade agent running inside a Docker container.
 Your job is to upgrade this application to the target React and Vite major versions specified in `.upgrade/plan.md`.

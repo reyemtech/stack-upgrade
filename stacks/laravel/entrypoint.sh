@@ -141,7 +141,7 @@ envsubst < /skill/templates/plan.md > .upgrade/plan.md
 envsubst < /skill/templates/checklist.yaml > .upgrade/checklist.yaml
 cp /skill/templates/run-log.md .upgrade/run-log.md
 cp /skill/templates/changelog.md .upgrade/changelog.md
-cp /skill/templates/CLAUDE.md .upgrade/CLAUDE.md
+cp /skill/templates/AGENT.md .upgrade/AGENT.md
 cp /skill/scripts/verify-fast.sh .upgrade/scripts/verify-fast.sh
 cp /skill/scripts/verify-full.sh .upgrade/scripts/verify-full.sh
 chmod +x .upgrade/scripts/verify-*.sh
