@@ -203,7 +203,7 @@ After a run, the `/output` volume contains:
 - **Ralph loop** — if Claude Code exits before the checklist is complete, it restarts with full context (up to `MAX_RESTARTS` times)
 - **Loop breaker** — after 3 failed attempts on the same error, the agent logs the failure, marks the phase as `failed`, and moves on
 - **Verification gates** — fast verification after every change, full verification before each phase commit
-- **No CLAUDE.md overwrite** — upgrade instructions go to `.upgrade/CLAUDE.md`; your project's own `CLAUDE.md` is preserved
+- **No CLAUDE.md overwrite** — upgrade instructions go to `.upgrade/AGENT.md`; your project's own `CLAUDE.md` is preserved
 
 ## Adding a New Stack
 

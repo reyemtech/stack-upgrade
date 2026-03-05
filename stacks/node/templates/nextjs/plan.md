@@ -40,7 +40,7 @@ Link: https://nextjs.org/docs/app/guides/upgrading/version-16
 - If the project uses Edge runtime explicitly in middleware (`export const runtime = 'edge'`): keep `middleware.ts` — Edge runtime is not supported in `proxy.ts`
 - If no Edge runtime usage: confirm the rename is correct and update any imports/references
 - Run `next build` to catch type errors in middleware/proxy
-- Run `next start` + `curl` against protected routes to smoke test auth/redirect behaviour (see Middleware Verification Note in CLAUDE.md)
+- Run `next start` + `curl` against protected routes to smoke test auth/redirect behaviour (see Middleware Verification Note in AGENT.md)
 - Verify: `next build` passes, middleware/proxy file matches target version convention
 
 ### Phase 4: Turbopack Configuration

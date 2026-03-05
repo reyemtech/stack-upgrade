@@ -42,7 +42,10 @@ while [ $RESTARTS -lt $MAX_RESTARTS ]; do
       2>&1 | tee /output/agent-run-$((RESTARTS + 1)).jsonl | /skill/scripts/stream-pretty.sh \
       || true
   elif [ "$AGENT_CLI" = "codex" ]; then
-    codex exec --full-auto --json "$PROMPT" \
+    codex exec \
+      --dangerously-bypass-approvals-and-sandbox \
+      --json \
+      "$PROMPT" \
       2>&1 | tee /output/agent-run-$((RESTARTS + 1)).jsonl | /skill/scripts/stream-pretty.sh \
       || true
   fi

@@ -27,15 +27,15 @@ cli/                           # Shared CLI — @reyemtech/stack-upgrade
 stacks/laravel/                # Laravel upgrade stack
   Dockerfile                   # PHP 8.4, Node 22, Composer 2, gh CLI, Claude Code CLI
   entrypoint.sh                # Clone repo, setup branch, install deps, recon, drop templates, launch ralph loop
-  kickoff-prompt.txt           # Initial prompt sent to Claude Code inside the container
+  kickoff-prompt.txt           # Initial prompt sent to the agent inside the container
   scripts/
-    ralph-loop.sh              # Restart loop — relaunches Claude Code if it exits before checklist complete
+    ralph-loop.sh              # Restart loop — relaunches the agent if it exits before checklist complete
     recon.sh                   # Pre-run repo analysis — produces .upgrade/recon-report.md
     verify-fast.sh             # Quick check: composer validate + route:list + tests
     verify-full.sh             # Full check: above + migrate:fresh + npm build + audits
-    stream-pretty.sh           # Prettifies Claude Code stream-json output for logs
+    stream-pretty.sh           # Prettifies agent stream output for logs
   templates/
-    CLAUDE.md                  # Dropped into .upgrade/ — agent instructions (NOT this file)
+    AGENT.md                   # Dropped into .upgrade/ — agent instructions (NOT this file)
     plan.md                    # Dropped into .upgrade/ — 7-phase upgrade plan (uses envsubst)
     checklist.yaml             # Dropped into .upgrade/ — phase tracking (uses envsubst)
     run-log.md                 # Dropped into .upgrade/ — agent decision log
@@ -52,7 +52,7 @@ All upgrade artifacts live in `.upgrade/` to avoid polluting the target repo:
 ```
 /workspace/
   .upgrade/
-    CLAUDE.md              # Agent instructions
+    AGENT.md               # Agent instructions
     plan.md                # Upgrade plan
     checklist.yaml         # Phase tracking
     run-log.md             # Decision log
@@ -123,9 +123,9 @@ If you need to steer the agent mid-run (via Docker exec or modifying files):
 - **Dependency snapshots** — before/after JSON snapshots of composer and npm packages saved to `/output/` for diff-based review.
 - **Recon** — `stacks/laravel/scripts/recon.sh` produces `.upgrade/recon-report.md` with package usage analysis, component counts, test suite shape.
 - **Upgrade guide** — official Laravel upgrade docs fetched and saved to `.upgrade/laravel-upgrade-guide.html`.
-- **No CLAUDE.md overwrite** — upgrade instructions go to `.upgrade/CLAUDE.md`; the target repo's own `CLAUDE.md` is preserved.
+- **No CLAUDE.md overwrite** — upgrade instructions go to `.upgrade/AGENT.md`; the target repo's own `CLAUDE.md` is preserved.
 
-## Upgrade Philosophy (stacks/laravel/templates/CLAUDE.md + stacks/laravel/templates/plan.md)
+## Upgrade Philosophy (stacks/laravel/templates/AGENT.md + stacks/laravel/templates/plan.md)
 
 These files define what the agent does inside the container:
 

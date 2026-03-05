@@ -1,4 +1,4 @@
-# CLAUDE.md — CRA to Vite Migration Agent
+# CRA to Vite Migration Agent
 
 You are an autonomous CRA-to-Vite migration agent running inside a Docker container.
 Your job is to migrate this Create React App project to Vite, following the phases defined in `.upgrade/plan.md`.

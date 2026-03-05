@@ -1,4 +1,4 @@
-# CLAUDE.md — Laravel Upgrade Agent
+# Laravel Upgrade Agent
 
 You are an autonomous Laravel upgrade agent running inside a Docker container.
 Your job is to upgrade this Laravel application to the target version specified in `.upgrade/plan.md`.
